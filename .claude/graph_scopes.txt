@@ -1,0 +1,73 @@
+# Microsoft Graph 요청 스코프
+#
+# 로그인할 때 토큰에 담길 권한 목록이다. 한 줄에 하나씩.
+# `#` 로 시작하는 줄은 무시된다.
+#
+# ── 반드시 알아야 할 것 ────────────────────────────────────────────────
+#
+# Entra 에 **동의된 권한**과 여기 적은 **요청 스코프**는 별개다.
+#
+#   동의는 있는데 여기 없다  →  토큰에 안 담긴다. 그 기능이 조용히 안 된다
+#   여기는 있는데 동의가 없다 →  로그인 자체가 실패한다
+#
+# 즉 관리자가 승인해도 이 파일에 줄을 추가하지 않으면 아무것도 달라지지 않는다.
+# 반대로 승인 목록에 없는 줄을 남겨두면 첫 로그인부터 막힌다.
+#
+# 줄을 고친 뒤에는 반드시 재로그인한다.
+#
+#   python3 bin/graph login --check
+#
+# ── 이 목록의 근거 ──────────────────────────────────────────────────────
+#
+# 2026-09-03 현대차 ICT 가 승인한 `HMG-LeaderAXSession-PILOT` 앱의
+# API 사용 권한 화면(위임됨 19종, 관리자 동의 완료)을 그대로 옮긴 것이다.
+# 원본: source/ict/2026-09-03_Graph권한_승인결과.md
+#
+# 승인 목록에 없어서 뺀 것 (이전 초안에 있었음):
+#   Mail.Read           → Mail.ReadWrite 가 상위
+#   Calendars.Read      → Calendars.ReadWrite 가 상위
+#   Calendars.ReadBasic → 승인 안 됨
+#   ChatMessage.Read    → 승인 안 됨. 읽기는 Chat.Read 로 한다
+#   Chat.ReadBasic      → 승인 안 됨. Chat.Read 가 상위
+# ───────────────────────────────────────────────────────────────────────
+
+# ── 기반 ──
+offline_access
+openid
+profile
+User.Read
+
+# ── 조직 정보 (메일 트리아지의 전제) ──
+# 발신자의 직급·부서를 모르면 "누가 보냈는가"로 우선순위를 못 매긴다.
+User.Read.All
+User.ReadBasic.All
+
+# ── 메일 ──
+Mail.ReadWrite
+MailboxSettings.Read
+
+# ── 일정 ──
+Calendars.ReadWrite
+Calendars.Read.Shared
+
+# ── Teams 읽기 ──
+Chat.Read
+ChannelMessage.Read.All
+Channel.ReadBasic.All
+Team.ReadBasic.All
+
+# ── 문서 (결재 검토·보고자료 첨부) ──
+Files.ReadWrite
+Files.ReadWrite.All
+
+# ── OneNote (회의록·체크포인트) ──
+Notes.ReadWrite
+Notes.ReadWrite.All
+
+# ── 발송 계열 ──
+# 아래 3종은 되돌릴 수 없는 행동이다. 토큰에는 담기되, 실제 호출은
+# guard_external_actions.py 훅이 본부장 확인을 받은 뒤에만 통과시킨다.
+# 확인 게이트를 끄고 싶다면 이 줄들을 주석 처리하는 것이 더 안전하다.
+Mail.Send
+ChatMessage.Send
+ChannelMessage.Send

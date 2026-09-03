@@ -1,0 +1,93 @@
+{
+  "$comment": "본부장 AI 비서 스켈레톤. 조회는 묻지 않고 통과, 바깥세상을 바꾸는 것만 훅이 되묻는다. 본부장별 차이는 gate_policy.json 에서 조정한다.",
+
+  "permissions": {
+    "allow": [
+      "Bash(python3 scripts/fetch_outlook_mail.py:*)",
+      "Bash(python3 scripts/fetch_outlook_calendar.py:*)",
+      "Bash(python3 scripts/fetch_teams_message.py:*)",
+      "Bash(python3 scripts/fetch_market_intel.py:*)",
+      "Bash(python3 scripts/transcribe_audio.py:*)",
+      "Bash(python3 scripts/check_connections.py:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(find:*)",
+      "Bash(date:*)",
+      "Bash(mkdir:*)",
+      "mcp__atlassian__search",
+      "mcp__atlassian__searchConfluenceUsingCql",
+      "mcp__atlassian__searchJiraIssuesUsingJql",
+      "mcp__atlassian__getConfluencePage",
+      "mcp__atlassian__getPagesInConfluenceSpace",
+      "mcp__atlassian__getConfluenceSpaces",
+      "mcp__atlassian__getJiraIssue",
+      "mcp__atlassian__getVisibleJiraProjects",
+      "mcp__atlassian__getAccessibleAtlassianResources",
+      "WebSearch"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(security add-generic-password:*)",
+      "Bash(security delete-generic-password:*)"
+    ]
+  },
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/session_start.py\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard_external_actions.py\"",
+            "timeout": 10,
+            "statusMessage": "외부 작업 점검 중"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/protect_secrets.py\"",
+            "timeout": 10,
+            "statusMessage": "자격증명 파일 보호 확인 중"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/cite_sources.py\"",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/grounding_check.py\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

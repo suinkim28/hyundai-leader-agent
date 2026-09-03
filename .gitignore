@@ -1,0 +1,13 @@
+# 자격증명은 OS 자격증명 저장소에 둔다. 이 파일은 만들지 않는다.
+.env
+.env.*
+!.env.example
+
+__pycache__/
+*.pyc
+.DS_Store
+
+# 무인 실행 로그와 원본 첨부는 대외비를 포함할 수 있다.
+logs/*/
+attachments/raw/*
+!attachments/raw/.gitkeep
