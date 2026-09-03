@@ -16,6 +16,7 @@ import re
 import secrets
 import subprocess
 import sys
+from pathlib import Path
 import time
 import urllib.error
 import urllib.parse
@@ -234,11 +235,29 @@ def keychain_set(service: str, value: str) -> None:
         json.dump(data, f, indent=2)
 
 
-def get_secret(env_name: str, keychain_service: str) -> str:
+def get_secret(env_name: str, keychain_service: str, *, required: bool = True) -> str:
+    """환경변수 먼저, 그다음 자격증명 저장소.
+
+    없을 때 빈 문자열을 돌려주면 안 된다. 2026-09-03 에 그것 때문에
+    tenant_id 와 client_id 가 빈 채로 로그인 URL 이 만들어져
+    `login.microsoftonline.com//oauth2/...&client_id=` 가 열렸다.
+    조용히 진행하는 대신 무엇이 없는지 말하고 멈춘다.
+    """
     value = os.environ.get(env_name, "").strip()
     if value and not is_placeholder_secret(value):
         return value
-    return keychain_get(keychain_service)
+
+    value = keychain_get(keychain_service)
+    if value and not is_placeholder_secret(value):
+        return value
+
+    if required:
+        raise SystemExit(
+            f"자격증명이 없습니다: {keychain_service}\n"
+            f"  에이전트에게 'Graph 설정해줘' 라고 말씀하십시오.\n"
+            f"  상태 확인: python3 bin/graph setup --check"
+        )
+    return ""
 
 
 def set_refresh_token(value: str) -> None:
@@ -452,6 +471,15 @@ class AuthCallbackHandler(BaseHTTPRequestHandler):
 
 
 def get_auth_code_token(tenant_id: str, client_id: str, client_secret: str | None = None) -> str:
+    # 빈 값으로 URL 을 만들면 login.microsoftonline.com//oauth2/...&client_id=
+    # 같은 주소가 열리고, 사용자는 무엇이 잘못됐는지 알 수 없다.
+    for label, value in (("Tenant ID", tenant_id), ("Client ID", client_id)):
+        if not (value or "").strip():
+            raise SystemExit(
+                f"{label} 가 비어 있어 로그인 URL 을 만들 수 없습니다.\n"
+                f"  상태 확인: python3 bin/graph setup --check"
+            )
+
     refresh_token = get_cached_refresh_token()
 
     if refresh_token:
