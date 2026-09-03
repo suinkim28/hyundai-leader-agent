@@ -121,26 +121,36 @@ def check_graph_credentials():
     return Check("Graph 자격증명", OK, "client/tenant/refresh token 확인"), True
 
 
-def _graph_token():
-    """저장된 refresh token 으로 access token 을 받아 본다."""
+def _graph_token(client_id, tenant_id, client_secret):
+    """저장된 refresh token 으로 access token 을 조용히 받아 본다.
+
+    브라우저를 열지 않는다. `get_auth_code_token()` 을 인자 없이 부르면
+    실패하고 (그 함수는 tenant_id, client_id 를 요구한다), 실패하면 여기서
+    바로 대화형 로그인 화면을 띄워 버린다 — 진단 스크립트가 할 일이 아니다.
+    그래서 refresh token 교환만 직접 재현한다.
+    """
     try:
         sys.path.insert(0, str(ROOT / "scripts"))
         import fetch_teams_message as ftm
     except Exception:
         return None
-    for name in ("get_access_token_from_refresh_token", "refresh_access_token",
-                 "get_auth_code_token"):
-        fn = getattr(ftm, name, None)
-        if callable(fn):
-            try:
-                token = fn()
-                if isinstance(token, str) and token:
-                    return token
-                if isinstance(token, dict) and token.get("access_token"):
-                    return token["access_token"]
-            except Exception:
-                continue
-    return None
+    refresh_token = ftm.get_cached_refresh_token()
+    if not refresh_token:
+        return None
+    try:
+        token = ftm.http_post_form(
+            ftm.token_endpoint(tenant_id),
+            {
+                "client_id": client_id,
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token,
+                "scope": ftm.DEVICE_SCOPES,
+                **({"client_secret": client_secret} if client_secret else {}),
+            },
+        )
+        return token.get("access_token") or None
+    except Exception:
+        return None
 
 
 def _graph_get(path, token, timeout=20):
@@ -300,7 +310,13 @@ def run_all():
 
     cred, have_token = check_graph_credentials()
     checks.append(cred)
-    token = _graph_token() if have_token else None
+    if have_token:
+        client_id = _secret("MICROSOFT_GRAPH_CLIENT_ID", "hmg-agent-graph-client-id")
+        tenant_id = _secret("MICROSOFT_GRAPH_TENANT_ID", "hmg-agent-graph-tenant-id")
+        client_secret = _secret("MICROSOFT_GRAPH_CLIENT_SECRET", "hmg-agent-graph-client-secret")
+        token = _graph_token(client_id, tenant_id, client_secret)
+    else:
+        token = None
     checks.extend(check_graph_endpoints(token))
 
     checks.extend(check_mcp())
