@@ -1,9 +1,9 @@
-# SETUP.md — 설치와 사전 준비 (AX 챔피언 · DEP 용)
+# SETUP.md: 설치와 사전 준비 (AX 챔피언, DEP 용)
 
-이 문서는 **본부장이 아니라 챔피언·DEP 가 읽는다.**
+이 문서는 **본부장이 아니라 챔피언, DEP 가 읽는다.**
 
 원칙 하나: **세션 당일에는 설치하지 않는다.** 2시간 세션에서 환경 세팅을
-시작하면 본부장이 볼 것은 진행 표시줄뿐이다. 환경·데이터·권한은 세션 전에
+시작하면 본부장이 볼 것은 진행 표시줄뿐이다. 환경, 데이터, 권한은 세션 전에
 끝나 있어야 하고, 세션에서는 본부장의 지식과 선호를 넣는 일만 한다.
 
 ---
@@ -15,7 +15,7 @@
 | 항목 | 확인 |
 | --- | --- |
 | **본부장 실제 사용 PC** (챔피언 PC 아님) | 여기서 돌지 않으면 의미가 없다 |
-| Python 3.9 이상 | `python3 --version` |
+| Python 3.11 이상 | `bin/graph check` (없으면 python.org 에서 설치, Add python.exe to PATH 체크) |
 | **H Code Desktop** | 사내 배포판 |
 | Claude Code CLI (무인 루틴용) | `claude --version` 또는 래퍼 번들 경로 |
 | 본부장 사내 계정 로그인 상태 | |
@@ -57,10 +57,10 @@ this workspace has not been trusted.
 ```
 
 훅은 신뢰 여부와 무관하게 동작하므로 안전장치는 유지되지만, 사용성이
-`paranoid` 등급처럼 떨어진다. **본부장에게 이 창을 보여주지 않는다** —
+`paranoid` 등급처럼 떨어진다. **본부장에게 이 창을 보여주지 않는다**: 
 챔피언이 세팅 단계에서 끝내 둔다.
 
-### 0-4. 하네스 자가진단 — **가장 중요한 단계**
+### 0-4. 하네스 자가진단: **가장 중요한 단계**
 
 H Code Desktop 은 Claude Code CLI 를 감싼 래퍼다. 래퍼가 `.claude/settings.json`
 의 훅 등록을 그대로 넘겨주는지는 **밖에서 알 수 없고, 무시되더라도 오류가
@@ -83,13 +83,13 @@ H Code Desktop 은 Claude Code CLI 를 감싼 래퍼다. 래퍼가 `.claude/sett
 판정을 끝내려면 에이전트 안에서 `/selftest` 를 해야 한다.
 
 ```bash
-python3 scripts/verify_harness.py
+bin/graph verify
 ```
 
 ### 0-5. 연결 진단
 
 ```bash
-python3 scripts/check_connections.py
+bin/graph check
 ```
 
 `실패` 항목이 나오는 것은 정상이다. 이 시점에는 아직 아무것도 연결되지
@@ -98,8 +98,8 @@ python3 scripts/check_connections.py
 ### 0-6. 훅 단독 실행 확인
 
 ```bash
-echo '{"tool_name":"Bash","tool_input":{"command":"python3 scripts/reply_outlook_mail.py --to a@b.c --message \"테스트\""}}' \
-  | python3 .claude/hooks/guard_external_actions.py
+echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b.c --message \"테스트\""}}' \
+  | .claude/hooks/run guard_external_actions.py
 ```
 
 `permissionDecision: ask` 가 나오면 정상이다. 아무것도 안 나오면 훅이 동작하지
@@ -112,12 +112,12 @@ echo '{"tool_name":"Bash","tool_input":{"command":"python3 scripts/reply_outlook
 
 ---
 
-## 1. D-7 — 권한
+## 1. D-7: 권한
 
 - [ ] Microsoft Graph 읽기 권한 승인 완료 (`CONNECTIONS.md` §2)
 - [ ] Confluence / Jira MCP 연결 및 본부장 계정 로그인
-- [ ] SharePoint · OneNote 접근 범위 확인
-- [ ] 토큰·비용 상한 정책 확인
+- [ ] SharePoint, OneNote 접근 범위 확인
+- [ ] 토큰, 비용 상한 정책 확인
 
 **미완이면 지금 에스컬레이션한다.** D-7에 안 된 것이 D-1에 되는 일은 없다.
 
@@ -127,10 +127,10 @@ echo '{"tool_name":"Bash","tool_input":{"command":"python3 scripts/reply_outlook
 
 ---
 
-## 2. D-5 — 남은 결정
+## 2. D-5: 남은 결정
 
-- [ ] STT 사용 승인 회신 — 막히면 회의 관련 워크플로 2종이 사라진다
-- [ ] 문서 DRM 일시 해제 회신 — 막히면 보고자료를 아예 못 읽는다
+- [ ] STT 사용 승인 회신: 막히면 회의 관련 워크플로 2종이 사라진다
+- [ ] 문서 DRM 일시 해제 회신: 막히면 보고자료를 아예 못 읽는다
 - [ ] 녹음 가능한 회의 범위 확정 → `ORG.md` §5 에 목록화
 
 **미결이면 해당 워크플로를 세션 범위에서 빼고 본부장께 사전 고지한다.**
@@ -138,13 +138,13 @@ echo '{"tool_name":"Bash","tool_input":{"command":"python3 scripts/reply_outlook
 
 ---
 
-## 3. D-3 — 데이터와 초안
+## 3. D-3: 데이터와 초안
 
 ### 3-1. 연결 진단 기록
 
 ```bash
-mkdir -p logs/$(date +%F)
-python3 scripts/check_connections.py > logs/$(date +%F)/connections.txt 2>&1
+mkdir -p logs/<오늘>
+bin/graph check > logs/<오늘>/connections.txt 2>&1
 ```
 
 결과 요약을 `PROFILE.md` §3 연결 표에 옮긴다.
@@ -155,21 +155,21 @@ python3 scripts/check_connections.py > logs/$(date +%F)/connections.txt 2>&1
 않는다.**
 
 - [ ] §1 본부 개요, 올해 최우선 목표
-- [ ] §2 보고 라인 — **경영진 계정 목록** (메일 트리아지 우선순위의 기준)
+- [ ] §2 보고 라인: **경영진 계정 목록** (메일 트리아지 우선순위의 기준)
 - [ ] §3 팀장급 구성원, AX 지원 인력
 - [ ] §4 진행 중 과제와 마일스톤
 - [ ] §5 정기 회의 + 녹음 가능 여부
 - [ ] §6 실제로 쓰는 시스템만
-- [ ] §7 본부 약어·용어 → `knowledge_base/용어집.txt` 에도 복사
+- [ ] §7 본부 약어, 용어 → `knowledge_base/용어집.txt` 에도 복사
 
 ### 3-3. 데이터 샘플 확보
 
 1회차에서 Quick Win 을 **실제 데이터로** 시연하려면 미리 있어야 한다.
 
-- [ ] 최근 2주 메일 (미읽음 포함) — 실제 상태 그대로
+- [ ] 최근 2주 메일 (미읽음 포함): 실제 상태 그대로
 - [ ] 회사 캘린더 2주치
 - [ ] 최근 회의 자료 1건 (첨부 문서 포함)
-- [ ] 진행 중 과제 1건의 흩어진 이력 (메일 · Confluence · 구두 지시)
+- [ ] 진행 중 과제 1건의 흩어진 이력 (메일, Confluence, 구두 지시)
 
 연결이 막혔으면 본부장 동의를 받아 내보내기 파일로 대체하고
 `attachments/raw/` 에 둔다.
@@ -179,11 +179,11 @@ python3 scripts/check_connections.py > logs/$(date +%F)/connections.txt 2>&1
 - [ ] **본부장 PC에서** 에이전트가 실제로 뜬다
 - [ ] `/morning-brief` 를 한 번 돌려 본다. 결과가 비어도 상관없다.
       **오류 없이 끝나는지**를 본다.
-- [ ] `/selftest` 재확인 — 세션이 몇 번 돈 뒤이므로 이제 `미확인` 이 없어야 한다
+- [ ] `/selftest` 재확인: 세션이 몇 번 돈 뒤이므로 이제 `미확인` 이 없어야 한다
 
 ---
 
-## 4. D-1 — 리허설
+## 4. D-1: 리허설
 
 - [ ] Quick Win 1건이 **실제 본부장 데이터로** 동작한다
 - [ ] 무인 루틴 등록 (선택)
@@ -202,12 +202,12 @@ python3 scripts/check_connections.py > logs/$(date +%F)/connections.txt 2>&1
 **하지 않는 것**
 
 - 설치, 로그인, 연결 설정
-- 조직도·인물 정보 받아쓰기
+- 조직도, 인물 정보 받아쓰기
 - 기능 설명 슬라이드
 
 **하는 것**
 
-1. `/bootstrap` — 필수 12문항 (20분).
+1. `/bootstrap`: 필수 12문항 (20분).
    본부장이 타이핑하지 않는다. 말씀하시면 에이전트가 적는다.
 2. 7번 답(없어졌으면 하는 반복 작업)을 **그 자리에서 실행**해 보여준다.
    설명하지 말고 돌린다.
@@ -231,7 +231,7 @@ python3 scripts/check_connections.py > logs/$(date +%F)/connections.txt 2>&1
 ```bash
 ls -t briefings/ | head            # 루틴이 실제로 돌고 있는가
 tail -30 PROFILE.md                 # §10 누적 학습 로그가 늘고 있는가
-python3 scripts/check_connections.py --quiet
+bin/graph check --quiet
 ```
 
 - 브리핑이 사흘 이상 비어 있다 → 루틴이 안 돌거나 안 읽히고 있다. 물어본다.
@@ -246,7 +246,7 @@ python3 scripts/check_connections.py --quiet
 
 - [ ] `PROFILE.md` / `ORG.md` 를 인쇄해 간다. **2주 만에 얼마나 자랐는지
       보여주는 것 자체가 성과다.**
-- [ ] 자율 활용 중 막힌 지점을 유형별로 정리한다 — 연결 / 규칙 / 기대 불일치.
+- [ ] 자율 활용 중 막힌 지점을 유형별로 정리한다: 연결 / 규칙 / 기대 불일치.
       세 가지는 해법이 완전히 다르다.
 - [ ] 틀리게 학습된 항목 목록. 2회차에서 함께 지운다.
 - [ ] 추가할 루틴 후보 **하나**. 여러 개를 늘리면 셋 다 안 쓰인다.
@@ -259,8 +259,8 @@ python3 scripts/check_connections.py --quiet
 | --- | --- | --- |
 | 세션 시작하자마자 질문만 한다 | 정상. `PROFILE.md` 가 `미완료` 상태 | `/bootstrap` 진행 |
 | 조회할 때마다 확인 창이 뜬다 | 워크스페이스 미신뢰, 또는 `gate_policy.json` 등급이 `paranoid` | 폴더에서 `claude` 를 한 번 실행해 신뢰 동의 (§0-3). 그래도 뜨면 등급을 `standard` 로 |
-| 메일·일정이 비어 있다 | Graph 미승인 또는 첫 로그인 전 | `check_connections.py`. 승인 전이면 내보내기 파일 |
-| 첨부를 못 읽는다 | 문서 DRM | `[미확보 — DRM]` 로 표시됨. 해제본을 `attachments/raw/` 에 |
+| 메일, 일정이 비어 있다 | Graph 미승인 또는 첫 로그인 전 | `check_connections.py`. 승인 전이면 내보내기 파일 |
+| 첨부를 못 읽는다 | 문서 DRM | `[미확보: DRM]` 로 표시됨. 해제본을 `attachments/raw/` 에 |
 | 답변에 출처가 없다 | 훅이 지적했는데 넘어갔다 | `SYSTEM.md` §3 을 다시 읽히고, 반복되면 `PROFILE.md` §4 에 규칙 추가 |
 | 무인 루틴이 안 돈다 | 래퍼 번들 CLI 가 PATH 에 없다 | `HMG_CLAUDE_BIN` 에 경로 지정 (`HARNESS.md` §5). 로그는 `logs/YYYY-MM-DD/` |
 | 발송 확인 창이 안 뜬다 | **훅이 죽어 있다** | 즉시 중단. `/selftest` → `HARNESS.md` §3, 필요하면 §6 축소 운영 |
@@ -269,10 +269,10 @@ python3 scripts/check_connections.py --quiet
 
 ---
 
-## 2026-09-03 갱신 — Graph 권한 승인 반영
+## 2026-09-03 갱신: Graph 권한 승인 반영
 
 현대차 ICT 가 `HMG-LeaderAXSession-PILOT` 앱으로 위임 권한 19종을 승인했다.
-승인 사용자는 본부장 4명과 운영자·챔피언 8명, 총 12명이다.
+승인 사용자는 본부장 4명과 운영자, 챔피언 8명, 총 12명이다.
 상세는 `source/ict/2026-09-03_Graph권한_승인결과.md`.
 
 ### 챔피언이 미리 할 것 (본부장 세션 D-3)
@@ -284,14 +284,14 @@ python3 scripts/check_connections.py --quiet
 3. 로그인해 토큰을 만든다. 브라우저에서 회사 계정으로 한 번만 하면 된다
 
    ```
-   python3 bin/graph login
+   bin/graph login
    ```
 
 4. Atlassian MCP 를 연결한다 (`CONNECTIONS.md` §6)
 5. 확인한다
 
    ```
-   python3 bin/graph check
+   bin/graph check
    ```
 
 ### 시크릿과 대화 기록
@@ -303,4 +303,4 @@ python3 scripts/check_connections.py --quiet
 
 `.claude/graph_scopes.txt` 는 Entra 승인 목록과 정확히 일치해야 한다.
 **승인되지 않은 권한이 한 줄이라도 있으면 로그인 자체가 실패한다.**
-권한이 추가·회수되면 이 파일부터 맞춘다.
+권한이 추가, 회수되면 이 파일부터 맞춘다.

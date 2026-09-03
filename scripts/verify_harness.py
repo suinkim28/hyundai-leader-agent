@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""하네스 검증 — 이 실행 환경에서 안전장치가 실제로 동작하는가.
+"""하네스 검증: 이 실행 환경에서 안전장치가 실제로 동작하는가.
 
 왜 이것이 있는가
 ----------------
@@ -55,29 +55,24 @@ HOOKS = {
         "새 세션을 한 번 시작한다",
     ),
     "guard_external_actions": (
-        "발송·변경·삭제 직전 확인",
+        "발송, 변경, 삭제 직전 확인",
         "**메일이 확인 없이 나간다.** 가장 치명적",
-        "python3 scripts/verify_harness.py --canary 참조",
+        "bin/graph verify --canary 참조",
     ),
     "protect_secrets": (
         "자격증명 파일 보호",
         ".env 류 파일이 덮어써질 수 있다",
         "에이전트에게 아무 파일이나 쓰게 한다",
     ),
-    "cite_sources": (
-        "출처 누락 감지",
-        "출처 없는 답변이 그대로 회의로 간다",
-        "에이전트에게 아무 질문이나 하고 답을 받는다",
-    ),
-    "grounding_check": (
-        "근거 없는 수치 감지",
-        "지어낸 숫자를 잡지 못한다",
-        "에이전트에게 아무 질문이나 하고 답을 받는다",
+    "keep_memory_portable": (
+        "기억이 하네스 전용 저장소로 새는 것 차단",
+        "본부장 기억이 특정 도구에 갇힌다. 폴더를 옮기면 사라진다",
+        "에이전트에게 아무 파일이나 쓰게 한다",
     ),
 }
 
-# 세션 시작·응답마다 도는 훅. 한 세션만 돌아도 흔적이 남는다.
-ALWAYS_FIRING = {"session_start", "cite_sources", "grounding_check"}
+# 세션 시작, 응답마다 도는 훅. 한 세션만 돌아도 흔적이 남는다.
+ALWAYS_FIRING = {"session_start"}
 
 STALE_SECONDS = 24 * 3600  # 하루 지난 흔적은 "이번 세션 증거"로 보지 않는다
 
@@ -93,7 +88,7 @@ class Result:
 
 
 # --------------------------------------------------------------------------
-# 정적 점검 — 파일이 제자리에 있는가
+# 정적 점검: 파일이 제자리에 있는가
 # --------------------------------------------------------------------------
 
 def check_files():
@@ -120,7 +115,7 @@ def check_files():
             out.append(Result(f"{name}.py", FAIL, "settings.json 에 등록 안 됨",
                               lost=HOOKS[name][1], fix="settings.json 의 hooks 절 확인"))
     if not out:
-        out.append(Result("훅 파일·등록", OK,
+        out.append(Result("훅 파일, 등록", OK,
                           f"{len(HOOKS)}개 전부 제자리"))
     return out
 
@@ -165,13 +160,13 @@ def check_workspace_root():
     if Path(env_root).resolve() == ROOT:
         return Result("프로젝트 루트", OK, str(ROOT))
     return Result("프로젝트 루트", FAIL,
-                  f"불일치 — 훅이 보는 곳: {env_root}",
+                  f"불일치, 훅이 보는 곳: {env_root}",
                   lost="훅 전부 (경로가 어긋나 실행되지 않는다)",
                   fix="워크스페이스 폴더를 직접 열어 에이전트를 시작할 것")
 
 
 # --------------------------------------------------------------------------
-# 동적 점검 — 실제로 돌았는가
+# 동적 점검: 실제로 돌았는가
 # --------------------------------------------------------------------------
 
 def read_beats():
@@ -190,13 +185,13 @@ def read_beats():
 def check_beats(beats):
     """실행 흔적으로 판정한다.
 
-    주의 — **"흔적이 없다"와 "훅이 죽었다"는 다르다.** 세션을 한 번도 열지
+    주의: **"흔적이 없다"와 "훅이 죽었다"는 다르다.** 세션을 한 번도 열지
     않은 새 워크스페이스에는 당연히 흔적이 없다. 그것을 실패로 부르면 배포
     직후마다 오경보가 나고, 오경보가 반복되면 진짜 경보도 무시된다.
 
     기준점은 `session_start` 다. 세션이 한 번이라도 열렸다면 이 훅은 반드시
     돌았어야 한다. 그 흔적이 있는데 다른 훅의 흔적이 없다면 그때는 진짜
-    문제다 — 하네스가 일부 훅 종류만 무시하고 있다는 뜻이다.
+    문제다: 하네스가 일부 훅 종류만 무시하고 있다는 뜻이다.
     """
     out = []
     now = int(time.time())
@@ -246,7 +241,7 @@ def check_harness_identity():
         hints.append(f"claude={cli}")
     if not hints:
         return Result("하네스", UNKNOWN, "식별 정보 없음 (셸에서 직접 실행 중)")
-    return Result("하네스", OK, " · ".join(hints[:4]))
+    return Result("하네스", OK, ", ".join(hints[:4]))
 
 
 def check_commands():
@@ -257,7 +252,7 @@ def check_commands():
                       fix="스켈레톤 재복사")
     n = len(list(d.glob("*.md")))
     return Result("슬래시 명령", OK,
-                  f"{n}개 정의됨 — 래퍼가 '/' 입력을 가로채면 "
+                  f"{n}개 정의됨: 래퍼가 '/' 입력을 가로채면 "
                   f"평상어로도 호출 가능 (SYSTEM.md §6)")
 
 
@@ -281,7 +276,7 @@ def _pad(text, target):
 
 
 def render(results, quiet=False):
-    lines = ["", "하네스 검증 — 안전장치가 실제로 동작하는가", "=" * 72]
+    lines = ["", "하네스 검증: 안전장치가 실제로 동작하는가", "=" * 72]
     shown = [r for r in results if not quiet or r.status != OK]
     width = max((_w(r.name) for r in shown), default=10)
     indent = " " * (6 + width + 2)
@@ -296,8 +291,8 @@ def render(results, quiet=False):
     n_fail = sum(1 for r in results if r.status == FAIL)
     n_warn = sum(1 for r in results if r.status == WARN)
     n_unk = sum(1 for r in results if r.status == UNKNOWN)
-    lines.append(f"정상 {sum(1 for r in results if r.status == OK)} · "
-                 f"주의 {n_warn} · 미확인 {n_unk} · 실패 {n_fail}")
+    lines.append(f"정상 {sum(1 for r in results if r.status == OK)}, "
+                 f"주의 {n_warn}, 미확인 {n_unk}, 실패 {n_fail}")
 
     if n_fail:
         lines += [
@@ -318,14 +313,14 @@ def render(results, quiet=False):
 
 
 CANARY_GUIDE = """
-카나리아 — 훅을 일부러 깨워서 확인하는 방법
+카나리아: 훅을 일부러 깨워서 확인하는 방법
 
 에이전트에게 아래를 그대로 실행하게 하십시오. 실제 발송은 일어나지 않습니다.
 존재하지 않는 주소로 보내는 명령이며, 훅이 살아 있으면 **실행 전에 확인 창이
 뜨고 거기서 거절하면 됩니다.**
 
     python3 scripts/reply_outlook_mail.py --to selftest@example.invalid \\
-        --message "하네스 카나리아 — 거절해 주십시오"
+        --message "하네스 카나리아: 거절해 주십시오"
 
 판정
 
@@ -339,9 +334,10 @@ CANARY_GUIDE = """
 """
 
 
+
 def main():
     ap = argparse.ArgumentParser(description="하네스 안전장치 검증")
-    ap.add_argument("--quiet", action="store_true", help="실패·주의·미확인만 출력")
+    ap.add_argument("--quiet", action="store_true", help="실패, 주의, 미확인만 출력")
     ap.add_argument("--canary", action="store_true", help="훅을 깨우는 방법 안내")
     ap.add_argument("--json", action="store_true", help="JSON 출력")
     args = ap.parse_args()

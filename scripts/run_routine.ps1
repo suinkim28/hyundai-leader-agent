@@ -13,7 +13,7 @@
 #
 #   $env:HMG_CLAUDE_BIN = "C:\Program Files\H Code Desktop\resources\claude.exe"
 #
-# 작업 스케줄러 등록 예 (평일 08:00) — 관리자 PowerShell 에서:
+# 작업 스케줄러 등록 예 (평일 08:00): 관리자 PowerShell 에서:
 #   $a = New-ScheduledTaskAction -Execute "powershell.exe" `
 #          -Argument "-NoProfile -ExecutionPolicy Bypass -File C:\<워크스페이스>\scripts\run_routine.ps1 morning-brief"
 #   $t = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Mon,Tue,Wed,Thu,Fri -At 08:00
@@ -77,7 +77,7 @@ CLI: $ClaudeBin
 ====================================================
 "@
 
-# --permission-mode acceptEdits: 파일 저장은 통과시키되, 발송·변경은
+# --permission-mode acceptEdits: 파일 저장은 통과시키되, 발송, 변경은
 # guard_external_actions.py 훅이 여전히 잡는다.
 & $ClaudeBin -p "/$Routine" --permission-mode acceptEdits 2>&1 |
     Out-File -FilePath $LogFile -Append -Encoding UTF8

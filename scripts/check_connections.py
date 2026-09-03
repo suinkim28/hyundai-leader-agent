@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""연결 진단 — 무엇이 되고 무엇이 안 되는지 한 화면으로.
+"""연결 진단: 무엇이 되고 무엇이 안 되는지 한 화면으로.
 
 왜 이것이 있는가
 ----------------
@@ -66,7 +66,7 @@ def check_python():
     if v >= (3, 9):
         return Check("Python", OK, f"{v.major}.{v.minor}.{v.micro}")
     return Check(
-        "Python", FAIL, f"{v.major}.{v.minor} — 3.9 이상이 필요합니다",
+        "Python", FAIL, f"{v.major}.{v.minor} (3.9 이상이 필요합니다)",
         lost="모든 스크립트",
         fallback="python.org 에서 3.11 이상 설치",
     )
@@ -85,7 +85,7 @@ def check_claude_cli():
                              text=True, timeout=20)
         return Check("Claude Code CLI", OK, out.stdout.strip() or path)
     except (OSError, subprocess.SubprocessError):
-        return Check("Claude Code CLI", WARN, f"{path} — 버전 확인 실패")
+        return Check("Claude Code CLI", WARN, f"{path}, 버전 확인 실패")
 
 
 def _secret(env_name, service):
@@ -108,14 +108,14 @@ def check_graph_credentials():
     if missing:
         return Check(
             "Graph 자격증명", FAIL, f"없음: {', '.join(missing)}",
-            lost="메일·일정·Teams 조회 전부",
+            lost="메일, 일정, Teams 조회 전부",
             fallback="본부장님께 'Graph 설정해줘' 라고 말씀하시면 에이전트가 진행합니다 (.claude/commands/setup.md)",
         ), None
     token = _secret("MICROSOFT_GRAPH_REFRESH_TOKEN", "hmg-agent-graph-refresh-token")
     if not token:
         return Check(
             "Graph 자격증명", WARN, "앱 등록은 되어 있으나 로그인 이력 없음",
-            lost="메일·일정 조회 (첫 로그인 전까지)",
+            lost="메일, 일정 조회 (첫 로그인 전까지)",
             fallback="python3 scripts/fetch_outlook_mail.py --top 1 을 한 번 실행해 로그인",
         ), None
     return Check("Graph 자격증명", OK, "client/tenant/refresh token 확인"), True
@@ -183,7 +183,7 @@ def check_mcp():
     path = shutil.which("claude")
     if not path:
         return [Check(
-            "Confluence / Jira MCP", WARN, "claude CLI 없음 — 확인 불가",
+            "Confluence / Jira MCP", WARN, "claude CLI 없음 (확인 불가)",
             lost="사내 지식 검색, 과제 추적",
             fallback="웹에서 복사한 내용을 knowledge_base/ 에 저장",
         )]
@@ -233,7 +233,7 @@ def check_web():
     except Exception:
         return Check(
             "외부 웹", WARN, "접근 불가 또는 프록시 필요",
-            lost="시장 동향 브리핑, 외부 법규·경쟁사 조사",
+            lost="시장 동향 브리핑, 외부 법규, 경쟁사 조사",
             fallback="사내 뉴스 클리핑을 knowledge_base/ 에 축적",
         )
 
@@ -266,17 +266,17 @@ def check_personalization():
     unknown = text.count("[미확보]")
     if state == "미완료":
         return Check(
-            "개인화 상태", WARN, f"미완료 — 미확보 항목 {unknown}개",
+            "개인화 상태", WARN, f"미완료, 미확보 항목 {unknown}개",
             lost="맞춤 답변 전부. 지금은 일반론만 가능합니다",
             fallback="세션에서 /bootstrap 실행 (필수 12문항, 20분)",
         )
-    return Check("개인화 상태", OK, f"{state} — 미확보 항목 {unknown}개")
+    return Check("개인화 상태", OK, f"{state}, 미확보 항목 {unknown}개")
 
 
 def check_gate_policy():
     path = ROOT / ".claude" / "gate_policy.json"
     if not path.exists():
-        return Check("확인 게이트", WARN, "gate_policy.json 없음 — standard 로 동작")
+        return Check("확인 게이트", WARN, "gate_policy.json 없음, standard 로 동작")
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
@@ -285,10 +285,10 @@ def check_gate_policy():
     owner = data.get("본부장", "미설정")
     if owner == "미설정":
         return Check("확인 게이트", WARN, f"등급 {level} / 본부장 미설정",
-                     lost="", fallback="gate_policy.json 의 본부장·등급을 설문 응답대로 설정")
+                     lost="", fallback="gate_policy.json 의 본부장, 등급을 설문 응답대로 설정")
     if level == "paranoid":
         return Check("확인 게이트", WARN,
-                     f"{owner} / paranoid — 조회까지 매번 확인합니다",
+                     f"{owner} / paranoid: 조회까지 매번 확인합니다",
                      lost="사용성", fallback="1회차에서 '실행'의 범위를 재확인할 것")
     return Check("확인 게이트", OK, f"{owner} / {level}")
 
@@ -337,19 +337,19 @@ def render(checks, quiet=False):
     n_fail = sum(1 for c in checks if c.status == FAIL)
     n_warn = sum(1 for c in checks if c.status == WARN)
     n_ok = sum(1 for c in checks if c.status == OK)
-    lines.append(f"정상 {n_ok} · 주의 {n_warn} · 실패 {n_fail}")
+    lines.append(f"정상 {n_ok}, 주의 {n_warn}, 실패 {n_fail}")
 
     if n_fail:
         lines.append("")
         lines.append("실패 항목이 있습니다. 세션 당일이 아니라 지금 에스컬레이션하십시오.")
-        lines.append("대체 경로만으로도 회의록·회고·의사결정 이력·과제 추적은 동작합니다.")
+        lines.append("대체 경로만으로도 회의록, 회고, 의사결정 이력, 과제 추적은 동작합니다.")
     lines.append("")
     return "\n".join(lines)
 
 
 def main():
     parser = argparse.ArgumentParser(description="본부장 에이전트 연결 진단")
-    parser.add_argument("--quiet", action="store_true", help="실패·주의만 출력")
+    parser.add_argument("--quiet", action="store_true", help="실패, 주의만 출력")
     parser.add_argument("--json", action="store_true", help="JSON 으로 출력")
     args = parser.parse_args()
 

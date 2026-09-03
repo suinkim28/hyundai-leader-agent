@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
-"""Transcribe a user-provided audio file with the OpenAI Audio API."""
+"""회의 녹음 파일을 텍스트로 옮긴다 (R7 회의 정리).
+
+외부 전송 고지
+--------------
+이 스크립트는 **음성 파일을 OpenAI 서버로 업로드합니다.** 사내 회의 녹음을
+외부로 내보내는 행위이므로, 사내 정보보호 정책상 허용되는지 먼저 확인한
+뒤에만 사용하십시오. 확인 전에는 R7 을 본부장이 직접 작성한 메모나
+Teams, OneNote 기록으로 진행합니다.
+
+전문 용어 교정
+--------------
+자주 틀리는 고유명사는 코드가 아니라
+`knowledge_base/transcription_glossary.txt` 에 한 줄에 하나씩 적습니다.
+본부마다 용어가 다르므로 코드에는 두지 않습니다.
+"""
 
 from __future__ import annotations
 
@@ -12,7 +26,14 @@ import sys
 import tempfile
 from pathlib import Path
 
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ImportError:                                          # pragma: no cover
+    raise SystemExit(
+        "openai 패키지가 없습니다.  pip install openai\n"
+        "  회의 녹음을 외부(OpenAI)로 보내는 기능입니다. "
+        "사내 정책 확인 후 사용하십시오."
+    )
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from secret_store import OPENAI_API_KEY, get_secret  # noqa: E402
@@ -24,22 +45,9 @@ DEFAULT_MODEL = "gpt-transcribe"
 MAX_UPLOAD_BYTES = 24 * 1024 * 1024
 MIN_CHUNK_SECONDS = 300
 TARGET_CHUNK_RATIO = 0.8
-DEFAULT_TERMS = [
-    "엘리스 (not 앨리스, Alice, or Elice unless explicitly spoken in English)",
-    "ICT",
-    "VLM",
-    "LLM",
-    "PoC",
-    "온프레미스",
-    "내재화",
-    "멀티 에이전트",
-    "상품위",
-    "회장 보고",
-    "현대자동차",
-    "현대차",
-    "김용준 책임",
-    "전성호 책임",
-]
+# 용어는 코드가 아니라 knowledge_base/transcription_glossary.txt 에 둔다.
+# 본부마다 다르고, 사람 이름이 코드에 박히면 다른 본부장에게 그대로 따라간다.
+DEFAULT_TERMS: list[str] = []
 
 
 def load_glossary_terms(path: Path) -> list[str]:

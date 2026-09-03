@@ -78,7 +78,7 @@ fi
   echo "===================================================="
 } >> "$LOGFILE"
 
-# --permission-mode acceptEdits: 파일 저장은 통과시키되, 발송·변경은
+# --permission-mode acceptEdits: 파일 저장은 통과시키되, 발송, 변경은
 # guard_external_actions.py 훅이 여전히 잡는다. 무인 실행에서 훅이 확인을
 # 요구하면 그 도구 호출은 거부되고 루틴은 나머지를 계속한다.
 "$CLAUDE_BIN" -p "/$ROUTINE" \

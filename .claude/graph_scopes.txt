@@ -38,7 +38,7 @@ profile
 User.Read
 
 # ── 조직 정보 (메일 트리아지의 전제) ──
-# 발신자의 직급·부서를 모르면 "누가 보냈는가"로 우선순위를 못 매긴다.
+# 발신자의 직급, 부서를 모르면 "누가 보냈는가"로 우선순위를 못 매긴다.
 User.Read.All
 User.ReadBasic.All
 
@@ -56,11 +56,11 @@ ChannelMessage.Read.All
 Channel.ReadBasic.All
 Team.ReadBasic.All
 
-# ── 문서 (결재 검토·보고자료 첨부) ──
+# ── 문서 (결재 검토, 보고자료 첨부) ──
 Files.ReadWrite
 Files.ReadWrite.All
 
-# ── OneNote (회의록·체크포인트) ──
+# ── OneNote (회의록, 체크포인트) ──
 Notes.ReadWrite
 Notes.ReadWrite.All
 

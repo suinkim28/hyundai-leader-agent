@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""OneDrive·SharePoint 파일 조회. 2026-09-03 승인된 Files 권한을 쓴다.
+"""OneDrive, SharePoint 파일 조회. 2026-09-03 승인된 Files 권한을 쓴다.
 
 어디에 쓰는가
 -------------
-R5 결재·보고자료 검토. 메일에 첨부된 보고자료가 SharePoint 링크로만 오는
+R5 결재, 보고자료 검토. 메일에 첨부된 보고자료가 SharePoint 링크로만 오는
 경우가 많고, 그 원문을 읽어야 근거를 확인할 수 있다.
 
     bin/graph files recent --top 20
@@ -25,14 +25,17 @@ FIELDS = "id,name,size,lastModifiedDateTime,webUrl,file,folder,parentReference"
 
 
 def brief(item: dict) -> dict:
+    # /me/drive/recent 는 원격(공유) 파일을 remoteItem 으로 감싸서 반환하는
+    # 경우가 있고, 그때는 최상위 필드가 비어 있다. remoteItem 값으로 보충한다.
+    remote = item.get("remoteItem") or {}
     return {
-        "id": item.get("id"),
-        "name": item.get("name"),
-        "size": item.get("size"),
-        "modified": item.get("lastModifiedDateTime"),
-        "kind": "folder" if item.get("folder") else "file",
-        "path": (item.get("parentReference") or {}).get("path", ""),
-        "url": item.get("webUrl"),
+        "id": item.get("id") or remote.get("id"),
+        "name": item.get("name") or remote.get("name"),
+        "size": item.get("size") if item.get("size") is not None else remote.get("size"),
+        "modified": item.get("lastModifiedDateTime") or remote.get("lastModifiedDateTime"),
+        "kind": "folder" if (item.get("folder") or remote.get("folder")) else "file",
+        "path": (item.get("parentReference") or remote.get("parentReference") or {}).get("path", ""),
+        "url": item.get("webUrl") or remote.get("webUrl"),
     }
 
 
@@ -50,8 +53,9 @@ def main() -> int:
     try:
         token = token_for(args.flow)
         if args.action == "recent":
-            data = graph_get(token, "/me/drive/recent",
-                             {"$top": args.top, "$select": FIELDS})
+            # /me/drive/recent 는 $select 를 주면 remoteItem(공유 파일) 필드가
+            # 통째로 비어 온다. 이 엔드포인트만 $select 없이 전체를 받는다.
+            data = graph_get(token, "/me/drive/recent", {"$top": args.top})
             items = [brief(x) for x in data.get("value", [])]
         elif args.action == "search":
             if not args.query:

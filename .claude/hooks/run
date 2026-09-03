@@ -1,0 +1,26 @@
+#!/bin/sh
+# 훅 실행기.  Windows 와 macOS 에서 같은 한 줄로 훅을 부르기 위해 있다.
+#
+# 왜 필요한가
+#   settings.json 에 `python3 ...` 라고 적으면 Windows 에서 훅이 통째로
+#   실행되지 않는다. python.org 설치본은 python3 를 만들지 않기 때문이다.
+#   훅이 실행되지 않으면 발송 확인 게이트가 사라진다. 조용히 사라진다.
+#
+# 쓰는 법
+#   .claude/hooks/run <스크립트파일명> [인자...]
+set -u
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SCRIPT="$DIR/$1"
+shift
+
+for PY in python3 py python; do
+  command -v "$PY" >/dev/null 2>&1 || continue
+  if [ "$PY" = "py" ]; then
+    exec py -3 "$SCRIPT" "$@"
+  fi
+  exec "$PY" "$SCRIPT" "$@"
+done
+
+echo "Python 을 찾지 못해 훅을 실행하지 못했습니다: $1" >&2
+echo "  python.org 에서 설치하고 'Add python.exe to PATH' 를 체크하십시오." >&2
+exit 1

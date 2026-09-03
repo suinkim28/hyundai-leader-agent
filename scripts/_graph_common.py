@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Graph 스크립트 공통 부분 — 토큰 획득과 GET 호출.
+"""Graph 스크립트 공통 부분: 토큰 획득과 GET 호출.
 
 새 스크립트를 쓸 때 인증 코드를 다시 짜지 않도록 한 곳에 모은다.
 """
@@ -53,6 +53,27 @@ def graph_get(token: str, path: str, params: dict | None = None) -> dict:
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="ignore")
         raise HttpRequestError("GET", url, exc.code, body) from exc
+
+
+def graph_post(token: str, path: str, body: dict) -> dict:
+    """`path` 는 /search/query 처럼 GRAPH_BASE 이후 부분."""
+    url = f"{GRAPH_BASE}{path}"
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(body).encode("utf-8"),
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body_text = exc.read().decode("utf-8", errors="ignore")
+        raise HttpRequestError("POST", url, exc.code, body_text) from exc
 
 
 def graph_download(token: str, path: str, dest: Path) -> int:

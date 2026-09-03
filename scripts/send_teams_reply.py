@@ -103,7 +103,8 @@ def parse_args() -> argparse.Namespace:
     body_group.add_argument("--message", "-m", help="Message body")
     body_group.add_argument("--message-file", help="Path to a UTF-8 text/HTML file")
     body_group.add_argument("--stdin", action="store_true", help="Read message body from stdin")
-    parser.add_argument("--prefix", default="[🦝]", help="Optional prefix, e.g. '[🦝]'. Pass '' to send with no prefix.")
+    parser.add_argument("--prefix", default="",
+                        help="Optional prefix prepended to the body. Empty by default.")
     parser.add_argument("--html", action="store_true", help="Treat message body as Teams HTML")
     parser.add_argument("--dry-run", action="store_true", help="Print target and body without sending")
     parser.add_argument(

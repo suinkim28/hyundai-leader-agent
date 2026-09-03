@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Collect raw material for the daily market/tech briefing.
+"""R1 시장 동향 브리핑의 재료를 모은다.
 
-Two sources:
-  1. 한경 글로벌마켓 YouTube channel (videos tab RSS + streams tab), with
-     Korean auto-generated transcripts cleaned to plain text.
-  2. Hacker News front page via the official Firebase API, with the
-     comment threads (comments matter more than the articles here).
+무엇을 읽을지는 코드가 아니라 `config/market_sources.json` 이 정한다.
+본부장마다 관심 분야가 다르므로 소스를 코드에 박아두지 않는다.
 
-Writes one markdown bundle that a briefing session reads as its input.
+  1. 설정된 YouTube 채널 (videos 탭 RSS + streams 탭), 한국어 자막을
+     평문으로 정리
+  2. Hacker News 프런트 페이지 (설정에서 켠 경우). 기사보다 코멘트가 정보다
+
+브리핑 세션이 입력으로 읽는 마크다운 묶음 하나를 쓴다.
+소스가 하나도 설정되지 않았으면 아무것도 만들지 않고 그렇게 알린다.
 """
 
 import argparse
@@ -17,22 +19,42 @@ import json
 import re
 import subprocess
 import sys
+import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-CHANNEL_ID = "UCWskYkV4c4S9D__rsfOl2JA"
-CHANNEL_NAME = "한경 글로벌마켓"
-CHANNEL_HANDLE = "%ED%95%9C%EA%B2%BD%EA%B8%80%EB%A1%9C%EB%B2%8C%EB%A7%88%EC%BC%93"
-RSS_URL = f"https://www.youtube.com/feeds/videos.xml?channel_id={CHANNEL_ID}"
-STREAMS_URL = f"https://www.youtube.com/@{CHANNEL_HANDLE}/streams"
+ROOT = Path(__file__).resolve().parent.parent
+SOURCES_FILE = ROOT / "config" / "market_sources.json"
 HN_API = "https://hacker-news.firebaseio.com/v0"
 KST = dt.timezone(dt.timedelta(hours=9))
 
 
 def log(msg):
     print(msg, file=sys.stderr)
+
+
+def load_sources():
+    """소스 설정을 읽는다. 파일이 없으면 빈 설정으로 본다."""
+    if not SOURCES_FILE.exists():
+        log(f"[warn] {SOURCES_FILE} 가 없습니다. 수집할 소스가 없습니다")
+        return {"youtube_channels": [], "hacker_news": False}
+    try:
+        raw = json.loads(SOURCES_FILE.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"{SOURCES_FILE} 를 읽을 수 없습니다: {exc}")
+    channels = []
+    for ch in raw.get("youtube_channels") or []:
+        cid = (ch.get("id") or "").strip()
+        if not cid or cid.startswith("UCxxxx"):
+            continue
+        channels.append({
+            "id": cid,
+            "name": (ch.get("name") or cid).strip(),
+            "handle": (ch.get("handle") or "").strip(),
+        })
+    return {"youtube_channels": channels, "hacker_news": bool(raw.get("hacker_news"))}
 
 
 def get_json(url, timeout=30):
@@ -45,9 +67,10 @@ def get_json(url, timeout=30):
 # YouTube
 # --------------------------------------------------------------------------
 
-def rss_entries():
+def rss_entries(channel):
     """Videos tab, with reliable published timestamps."""
-    req = urllib.request.Request(RSS_URL, headers={"User-Agent": "Mozilla/5.0"})
+    url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel['id']}"
+    req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(req, timeout=30) as resp:
         root = ET.fromstring(resp.read())
     ns = {"a": "http://www.w3.org/2005/Atom", "yt": "http://www.youtube.com/xml/schemas/2015"}
@@ -60,15 +83,20 @@ def rss_entries():
             "title": e.find("a:title", ns).text,
             "published": published.astimezone(KST),
             "source": "videos",
+            "channel": channel["name"],
         }
     return out
 
 
-def stream_ids(limit):
+def stream_ids(channel, limit):
     """Streams tab. Livestreams do not reliably show up in the channel RSS."""
+    if not channel.get("handle"):
+        return {}
+    handle = urllib.parse.quote(channel["handle"])
     cmd = [
         "yt-dlp", "--flat-playlist", "--no-warnings", "--ignore-errors",
-        "--playlist-end", str(limit), "--print", "%(id)s\t%(title)s", STREAMS_URL,
+        "--playlist-end", str(limit), "--print", "%(id)s\t%(title)s",
+        f"https://www.youtube.com/@{handle}/streams",
     ]
     try:
         res = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
@@ -81,7 +109,8 @@ def stream_ids(limit):
             continue
         vid, title = line.split("\t", 1)
         out[vid.strip()] = {"id": vid.strip(), "title": title.strip(),
-                            "published": None, "source": "streams"}
+                            "published": None, "source": "streams",
+                            "channel": channel["name"]}
     return out
 
 
@@ -129,10 +158,15 @@ def transcript(vid, workdir):
     return ""
 
 
-def collect_youtube(since, max_videos, workdir):
-    entries = rss_entries()
-    for vid, meta in stream_ids(max_videos + 4).items():
-        entries.setdefault(vid, meta)
+def collect_youtube(channels, since, max_videos, workdir):
+    entries = {}
+    for channel in channels:
+        try:
+            entries.update(rss_entries(channel))
+        except Exception as exc:
+            log(f"[error] {channel['name']} RSS 실패: {exc}")
+        for vid, meta in stream_ids(channel, max_videos + 4).items():
+            entries.setdefault(vid, meta)
 
     # Fill in dates for streams-tab-only entries.
     unknown = [v for v, m in entries.items() if m["published"] is None]
@@ -215,7 +249,7 @@ def render(videos, stories, since, now, cap, skipped=()):
     L.append(f"# Market & Tech Intel Bundle")
     L.append(f"\n생성: {now:%Y-%m-%d %H:%M} KST, 수집 범위: {since:%Y-%m-%d %H:%M} 이후\n")
 
-    L.append(f"\n## 1. {CHANNEL_NAME} (YouTube)\n")
+    L.append("\n## 1. YouTube\n")
     if skipped:
         L.append("\n> 수집하지 못한 항목 (브리핑에 반드시 명시할 것):\n")
         for s in skipped:
@@ -225,6 +259,7 @@ def render(videos, stories, since, now, cap, skipped=()):
         L.append("_수집 범위 내 신규 영상 없음._\n")
     for v in videos:
         L.append(f"\n### {v['title']}")
+        L.append(f"- 채널: {v.get('channel', '(미상)')}")
         L.append(f"- 게시: {v['published']:%Y-%m-%d %H:%M} KST ({v['source']} 탭)")
         L.append(f"- URL: https://www.youtube.com/watch?v={v['id']}")
         text = v.get("transcript") or ""
@@ -238,7 +273,7 @@ def render(videos, stories, since, now, cap, skipped=()):
     L.append(f"\n\n## 2. Hacker News Top {len(stories)}\n")
     for i, s in enumerate(stories, 1):
         L.append(f"\n### {i}. {s.get('title','(no title)')}")
-        L.append(f"- {s.get('score',0)} points · {s.get('descendants',0)} comments")
+        L.append(f"- {s.get('score',0)} points, {s.get('descendants',0)} comments")
         if s.get("url"):
             L.append(f"- 원문: {s['url']}")
         L.append(f"- 토론: https://news.ycombinator.com/item?id={s['id']}")
@@ -269,6 +304,16 @@ def main():
     ap.add_argument("--skip-hn", action="store_true")
     args = ap.parse_args()
 
+    sources = load_sources()
+    channels = sources["youtube_channels"]
+    want_hn = sources["hacker_news"]
+    if not channels and not want_hn:
+        raise SystemExit(
+            f"수집할 소스가 없습니다.\n"
+            f"  {SOURCES_FILE} 에 본부장의 관심 분야에 맞는 소스를 넣으십시오.\n"
+            f"  설정 전까지 R1 은 웹 검색으로 대신합니다."
+        )
+
     now = dt.datetime.now(KST)
     since = now - dt.timedelta(hours=args.since_hours)
 
@@ -278,13 +323,13 @@ def main():
         stale.unlink()
 
     videos, stories, skipped = [], [], []
-    if not args.skip_youtube:
+    if channels and not args.skip_youtube:
         try:
-            videos, skipped = collect_youtube(since, args.max_videos, workdir)
+            videos, skipped = collect_youtube(channels, since, args.max_videos, workdir)
         except Exception as exc:
             log(f"[error] youtube collection failed: {exc}")
             skipped = [{"title": "YouTube 수집 전체 실패", "id": "", "reason": str(exc)[:200]}]
-    if not args.skip_hn:
+    if want_hn and not args.skip_hn:
         try:
             stories = collect_hn(args.hn_stories, args.hn_comments)
         except Exception as exc:

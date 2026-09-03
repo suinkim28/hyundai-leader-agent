@@ -16,15 +16,15 @@
 본부장마다 "무엇을 확인받고 싶은가"가 다르다. 사전설문 응답이 실제로 셋 다
 달랐다. `.claude/gate_policy.json` 에서 등급을 고른다.
 
-  standard  발송·게시·캘린더 변경·원격 쓰기·삭제만 확인   (기본값)
-  strict    standard + 문서 수정/게시, 업무지시·담당자 지정
-  paranoid  모든 도구 호출을 확인 (조회·검색 포함)
+  standard  발송, 게시, 캘린더 변경, 원격 쓰기, 삭제만 확인   (기본값)
+  strict    standard + 문서 수정/게시, 업무지시, 담당자 지정
+  paranoid  모든 도구 호출을 확인 (조회, 검색 포함)
 
 paranoid 는 사용성이 크게 떨어진다. 설문에서 "모든 실행 행위"를 고른 분에게는
-1회차에서 "실행"이 발송·수정을 뜻한 것인지 조회까지 포함한 것인지 반드시
+1회차에서 "실행"이 발송, 수정을 뜻한 것인지 조회까지 포함한 것인지 반드시
 되물은 뒤 등급을 정할 것.
 
-읽기·검색·`--dry-run` 은 어느 등급에서도(paranoid 제외) 건드리지 않는다.
+읽기, 검색, `--dry-run` 은 어느 등급에서도(paranoid 제외) 건드리지 않는다.
 """
 
 import json
@@ -36,15 +36,21 @@ PREVIEW_CHARS = 400
 POLICY_PATH = Path(__file__).resolve().parents[1] / "gate_policy.json"
 
 # --- Bash: 외부 발송 (--dry-run 이 없을 때만 실제 발송) --------------------
+# 스크립트 이름과 bin/graph 하위 명령을 모두 잡는다. 어느 한쪽만 잡으면
+# 다른 경로로 부를 때 게이트가 조용히 사라진다.
 SEND_PATTERNS = [
-    (re.compile(r"\breply_outlook_mail\b"), "Outlook 메일 발송"),
-    (re.compile(r"\bsend_teams_reply\b"), "Teams 메시지 발송"),
-    (re.compile(r"\bpost_teams_channel_message\b"), "Teams 채널 새 글 게시"),
+    (re.compile(r"\breply_outlook_mail\b|\bgraph(?:\.py|\.cmd)?\s+reply-mail\b"),
+     "Outlook 메일 발송"),
+    (re.compile(r"\bsend_teams_reply\b|\bgraph(?:\.py|\.cmd)?\s+reply-teams\b"),
+     "Teams 메시지 발송"),
+    (re.compile(r"\bpost_teams_channel_message\b|\bgraph(?:\.py|\.cmd)?\s+post-teams\b"),
+     "Teams 채널 새 글 게시"),
 ]
 
 # --- Bash: 캘린더 변경 (dry-run 옵션이 없다) ------------------------------
 CALENDAR_PATTERNS = [
-    (re.compile(r"\bcreate_outlook_event\b"), "Outlook 일정 생성"),
+    (re.compile(r"\bcreate_outlook_event\b|\bgraph(?:\.py|\.cmd)?\s+create-event\b"),
+     "Outlook 일정 생성"),
     (re.compile(r"\bdelete_outlook_event\b"), "Outlook 일정 삭제"),
 ]
 
@@ -72,7 +78,7 @@ MCP_LABELS = {
     "createConfluenceFooterComment": "Confluence 코멘트 등록",
 }
 
-# strict 등급에서 추가로 잡는 것 — "업무지시·담당자 지정"에 해당한다.
+# strict 등급에서 추가로 잡는 것: "업무지시, 담당자 지정"에 해당한다.
 ASSIGNMENT_KEYS = {"assignee", "assigneeAccountId", "assignee_id"}
 
 
@@ -122,7 +128,8 @@ def extract_target(command):
     m = re.search(r"--to\s+(['\"]?)([^\s'\"]+@[^\s'\"]+)\1", command)
     if m:
         return f"수신자 {m.group(2)}"
-    m = re.search(r"reply_outlook_mail\S*\s+(?:\S+\s+)*?([A-Za-z0-9=_-]{40,})", command)
+    m = re.search(r"(?:reply_outlook_mail\S*|graph(?:\.py|\.cmd)?\s+reply-mail)"
+                  r"\s+(?:\S+\s+)*?([A-Za-z0-9=_-]{40,})", command)
     if m:
         return f"메일 ID {m.group(1)[:24]}..."
     return ""
@@ -139,7 +146,7 @@ def handle_bash(command, level):
             return ask(
                 f"[{label}] 본부장님 계정으로 실제 발송합니다. 되돌릴 수 없습니다.\n"
                 f"대상: {target}\n"
-                f"본문: {preview or '(추출 실패 — 명령을 직접 확인해 주세요)'}"
+                f"본문: {preview or '(추출 실패, 명령을 직접 확인해 주세요)'}"
             )
 
     for pattern, label in CALENDAR_PATTERNS:

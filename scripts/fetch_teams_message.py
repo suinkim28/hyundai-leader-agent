@@ -78,8 +78,21 @@ KEYCHAIN_CLIENT_ID = "hmg-agent-graph-client-id"
 KEYCHAIN_CLIENT_SECRET = "hmg-agent-graph-client-secret"
 KEYCHAIN_TENANT_ID = "hmg-agent-graph-tenant-id"
 KEYCHAIN_REFRESH_TOKEN = "hmg-agent-graph-refresh-token"
-LOCAL_REDIRECT_PORT = 8765
-LOCAL_REDIRECT_URI = f"http://localhost:{LOCAL_REDIRECT_PORT}/callback"
+# 로그인 콜백 주소.
+#
+# **Entra 앱 등록의 리디렉션 URI 와 한 글자도 다르면 안 된다.**
+# 다르면 로그인 화면에서 AADSTS50011 이 뜬다.
+#
+# 기본값은 현대자동차 ICT 가 등록한 값이다. 테넌트가 다른 앱을 쓸 때는
+# 환경변수로 덮어쓴다.
+#
+#     export MICROSOFT_GRAPH_REDIRECT_URI="http://localhost:8765/callback"
+#
+# 지금 무엇이 쓰이는지 보려면:  python3 bin/graph login --check
+LOCAL_REDIRECT_URI = os.environ.get(
+    "MICROSOFT_GRAPH_REDIRECT_URI", "http://localhost:3000/auth/callback"
+).strip()
+LOCAL_REDIRECT_PORT = urllib.parse.urlparse(LOCAL_REDIRECT_URI).port or 3000
 DOTENV_PATHS: list[str] = []
 
 
@@ -238,10 +251,9 @@ def keychain_set(service: str, value: str) -> None:
 def get_secret(env_name: str, keychain_service: str, *, required: bool = True) -> str:
     """환경변수 먼저, 그다음 자격증명 저장소.
 
-    없을 때 빈 문자열을 돌려주면 안 된다. 2026-09-03 에 그것 때문에
-    tenant_id 와 client_id 가 빈 채로 로그인 URL 이 만들어져
-    `login.microsoftonline.com//oauth2/...&client_id=` 가 열렸다.
-    조용히 진행하는 대신 무엇이 없는지 말하고 멈춘다.
+    없을 때 빈 문자열을 돌려주지 않는다. 빈 값으로 진행하면 인자가 빠진
+    로그인 URL 이 열리고 원인을 알기 어려운 오류가 난다. 조용히 넘어가는
+    대신 무엇이 없는지 말하고 멈춘다.
     """
     value = os.environ.get(env_name, "").strip()
     if value and not is_placeholder_secret(value):

@@ -1,5 +1,5 @@
 ---
-description: 최초 설정 — 자격증명 저장, 로그인, 연결 확인까지 한 번에
+description: 최초 설정, 자격증명 저장, 로그인, 연결 확인까지 한 번에
 ---
 
 본부장님을 대신해 설정을 진행한다. **본부장님은 터미널을 열지 않는다.**
@@ -15,7 +15,7 @@ description: 최초 설정 — 자격증명 저장, 로그인, 연결 확인까�
 ## 1. 지금 무엇이 되고 무엇이 안 되는지 먼저 본다
 
 ```
-python3 bin/graph check
+bin/graph check
 ```
 
 결과를 그대로 붙여넣지 말고, **안 되는 것과 그것이 왜 필요한지**만 두세 줄로 전한다.
@@ -24,13 +24,13 @@ python3 bin/graph check
 
 없으면 이렇게 여쭙는다. 세 값을 한 번에 받는다.
 
-> 메일·일정·Teams 를 읽으려면 회사에서 발급한 값 세 개가 필요합니다.
+> 메일, 일정, Teams 를 읽으려면 회사에서 발급한 값 세 개가 필요합니다.
 > **Client ID, Tenant ID, Client Secret** 을 이 창에 그대로 붙여넣어 주십시오.
 
 받으면 즉시 저장한다. **값을 다시 화면에 쓰지 않는다.**
 
 ```
-python3 bin/graph setup <<'JSON'
+bin/graph setup <<'JSON'
 {"client_id": "...", "tenant_id": "...", "client_secret": "..."}
 JSON
 ```
@@ -44,7 +44,7 @@ Entra 의 **`값(Value)` 열**을 다시 확인해 달라고 말씀드린다.
 ## 3. 로그인
 
 ```
-python3 bin/graph login
+bin/graph login
 ```
 
 브라우저가 열린다. 이렇게 안내한다.
@@ -56,12 +56,12 @@ python3 bin/graph login
 
 | 메시지 | 원인 | 조치 |
 | --- | --- | --- |
-| `AADSTS50011` | 리디렉션 URI 불일치 | 앱 등록에 `http://localhost:8765/callback` |
+| `AADSTS50011` | 리디렉션 URI 불일치 | `bin/graph login --check` 로 현재 값을 확인해 앱 등록 값과 맞춘다. 앱을 못 고치면 `MICROSOFT_GRAPH_REDIRECT_URI` 환경변수로 맞춘다 |
 | `AADSTS65001` | 관리자 동의 누락 | ICT 문의 |
 | `AADSTS70011` invalid_scope | 승인 안 된 권한이 요청 스코프에 있음 | `.claude/graph_scopes.txt` |
-| `invalid_client` | 시크릿 오타·만료 | 2번으로 되돌아간다 |
+| `invalid_client` | 시크릿 오타, 만료 | 2번으로 되돌아간다 |
 
-## 4. Confluence · Jira
+## 4. Confluence, Jira
 
 `bin/graph check` 에서 Atlassian 이 안 잡히면 안내한다.
 연결 절차는 `CONNECTIONS.md` 의 Atlassian 절을 따른다.
@@ -70,7 +70,7 @@ MCP 등록은 에이전트가 실행하고, 브라우저 로그인만 본부장�
 ## 5. 확인
 
 ```
-python3 bin/graph check
+bin/graph check
 ```
 
 되는 것과 안 되는 것을 다시 정리해 전한다.

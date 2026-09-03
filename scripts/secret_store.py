@@ -1,28 +1,20 @@
 #!/usr/bin/env python3
-"""Resolve secrets from the environment, then fall back to the macOS Keychain.
+"""자격증명을 OS 의 보안 저장소에서 읽고 쓴다.
 
-Why this exists
----------------
-2026-08-27: an agent overwrote `Secretary/.env` with `.env.example`, wiping
-four live secrets. `.env` is gitignored and there was no snapshot, so the
-only reason recovery was possible is that some values also lived in the
-Keychain.
+값은 이 워크스페이스의 어느 파일에도 저장하지 않는다. 평문 파일은 실수로
+커밋되거나 백업으로 새어 나가므로, OS 가 제공하는 저장소에만 둔다.
 
-`fetch_teams_message.py` already had this pattern for the Microsoft Graph
-credentials. This module generalises it so any script can use it without
-importing the Graph module (and its heavy dependencies).
+읽는 순서
+--------
+1. 환경변수 (실제 값이 들어 있을 때만)
+2. OS 보안 저장소
+     macOS   : 키체인
+     Windows : DPAPI 로 암호화한 %LOCALAPPDATA%\\hmg-agent\\secrets
+     그 외   : ~/.config/hmg-agent/secrets.json (권한 0600)
 
-Precedence
-----------
-1. the environment variable, when it holds a real value
-2. the macOS Keychain entry
-3. `~/.config/secretary/secrets.json`, keyed by service name (Linux/CI)
+환경변수에 자리표시자가 들어 있으면 없는 것으로 본다.
 
-A placeholder in the environment is treated as absent, so a clobbered
-`.env` degrades to the Keychain instead of failing.
-
-Register a secret with:
-    security add-generic-password -U -a "$USER" -s <service> -w
+저장은 에이전트에게 "Graph 설정해줘" 라고 말하면 된다.
 """
 
 from __future__ import annotations
@@ -35,7 +27,7 @@ from pathlib import Path
 
 FALLBACK_FILE = Path.home() / ".config" / "hmg-agent" / "secrets.json"
 
-# `.env.example` uses `your_openai_api_key`; older code only caught `your-`.
+# 템플릿에 남은 자리표시자는 값이 없는 것으로 본다.
 _PLACEHOLDER_PREFIXES = ("your", "<", "$", "changeme", "change-me",
                          "placeholder", "dummy", "xxx", "todo")
 
@@ -172,10 +164,9 @@ def get_secret(env_name: str, keychain_service: str, *, required: bool = True) -
 
     if required:
         raise SystemExit(
-            f"{env_name} is not configured.\n"
-            f"  .env 에 넣거나, Keychain 에 등록하세요:\n"
-            f'  security add-generic-password -U -a "$USER" '
-            f'-s {keychain_service} -w'
+            f"자격증명이 없습니다: {keychain_service}\n"
+            f"  에이전트에게 '설정해줘' 라고 말씀하시면 저장합니다.\n"
+            f"  상태 확인: bin/graph setup --check"
         )
     return ""
 
@@ -187,7 +178,7 @@ ATLASSIAN_EMAIL = ("ATLASSIAN_EMAIL", "hmg-agent-atlassian-email")
 ATLASSIAN_API_TOKEN = ("ATLASSIAN_API_TOKEN", "hmg-agent-atlassian-api-token")
 MLAPI_KIMI_KEY = ("MLAPI_KIMI_KEY", "hmg-agent-mlapi-key")
 
-# Microsoft Graph — 2026-09-03 ICT 승인 앱 HMG-LeaderAXSession-PILOT
+# Microsoft Graph: 2026-09-03 ICT 승인 앱 HMG-LeaderAXSession-PILOT
 GRAPH_CLIENT_ID = ("MICROSOFT_GRAPH_CLIENT_ID", "hmg-agent-graph-client-id")
 GRAPH_TENANT_ID = ("MICROSOFT_GRAPH_TENANT_ID", "hmg-agent-graph-tenant-id")
 GRAPH_CLIENT_SECRET = ("MICROSOFT_GRAPH_CLIENT_SECRET", "hmg-agent-graph-client-secret")

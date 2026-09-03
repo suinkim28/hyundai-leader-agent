@@ -1,0 +1,16 @@
+{
+  "_설명": "R1 시장 동향 브리핑이 읽는 소스 목록입니다. 본부장의 관심 주제에 맞춰 에이전트가 채웁니다. PROFILE.md 의 관심 주제와 함께 보십시오.",
+  "_채우는_법": "youtube_channels 에 항목을 추가하려면 채널 페이지에서 channel_id(UC 로 시작) 와 @handle 을 확인해 아래 형식대로 넣습니다.",
+
+  "youtube_channels": [],
+
+  "hacker_news": false,
+
+  "_예시": [
+    {
+      "id": "UCxxxxxxxxxxxxxxxxxxxxxx",
+      "name": "채널 표시 이름",
+      "handle": "채널핸들"
+    }
+  ]
+}

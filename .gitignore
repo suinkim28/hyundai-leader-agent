@@ -7,7 +7,32 @@ __pycache__/
 *.pyc
 .DS_Store
 
-# 무인 실행 로그와 원본 첨부는 대외비를 포함할 수 있다.
-logs/*/
+# ---------------------------------------------------------------------------
+# 본부장 개인 데이터
+#
+# 이 레포는 본부장 한 분당 하나씩 복사해 쓰는 스켈레톤이다. 아래 폴더에
+# 쌓이는 것은 그 PC 를 쓰는 본부장 한 분의 것이며, 커밋되면 다른 본부장과
+# 인사팀에게 그대로 따라간다. 그래서 폴더째 무시하고 빈 껍데기만 남긴다.
+#
+# PROFILE.md 와 ORG.md 도 추적하지 않는다. 레포에는 templates/ 의 빈
+# 원본만 두고, 세션 시작 시 없으면 거기서 복사한다. 추적하지 않으므로
+# 채워진 프로파일이 커밋될 방법 자체가 없다.
+# ---------------------------------------------------------------------------
+/PROFILE.md
+/ORG.md
+briefings/*
+!briefings/.gitkeep
+
+knowledge_base/*
+!knowledge_base/.gitkeep
+!knowledge_base/transcription_glossary.txt
+
+logs/*
+!logs/.gitkeep
+
 attachments/raw/*
 !attachments/raw/.gitkeep
+attachments/extracted/*
+!attachments/extracted/.gitkeep
+
+.tmp/

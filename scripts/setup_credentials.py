@@ -60,7 +60,7 @@ def validate(values: dict[str, str]) -> list[str]:
         if not is_secret and not GUID.match(value):
             problems.append(
                 f"{label} 형식이 GUID 가 아닙니다 "
-                f"(예: d48b7ab1-3364-43a1-96e2-dcc808d8639c)"
+                f"(예: 00000000-0000-0000-0000-000000000000)"
             )
         if is_secret and len(value) < 20:
             problems.append(f"{label} 이(가) 너무 짧습니다. 값을 다시 확인하십시오")

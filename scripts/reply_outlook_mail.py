@@ -1,14 +1,29 @@
 #!/usr/bin/env python3
-"""Reply to an Outlook mail message via Microsoft Graph."""
+"""Outlook 메일 회신 (쓰기).
+
+어디에 쓰는가
+-------------
+R4 답변 초안. 되돌릴 수 없으므로 훅이 본부장 확인을 받는다. 확인을
+요청하기 전에 반드시 `--dry-run` 으로 무엇이 나갈지 먼저 보여드릴 것.
+`--dry-run` 은 로그인 없이 돈다.
+
+    bin/graph mail --unread --json          # message_id 확인
+    bin/graph mail-reply <id> --message "..." --dry-run
+    bin/graph mail-reply <id> --message "..."
+"""
 
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from fetch_teams_message import (
     ENV_CLIENT_ID,
@@ -88,10 +103,25 @@ def main() -> int:
 
     try:
         load_dotenv()
+        message = read_body(args)
+
+        # 항상 html 로 보낸다. 평문은 이스케이프한 뒤 줄바꿈만 <br> 로 바꾼다.
+        # contentType 을 text 로 두고 <br> 을 넣으면 받는 쪽에 태그가 그대로 보인다.
+        content = message if args.html else html.escape(message).replace("\n", "<br>")
+
+        endpoint = "replyAll" if args.reply_all else "reply"
+        url = f"{GRAPH_BASE}/me/messages/{urllib.parse.quote(args.message_id, safe='')}/{endpoint}"
+
+        payload = {"message": {"body": {"contentType": "html", "content": content}}}
+
+        if args.dry_run:
+            print(f"Target: {url}")
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+            return 0
+
         tenant_id = get_secret(ENV_TENANT_ID, KEYCHAIN_TENANT_ID)
         client_id = get_secret(ENV_CLIENT_ID, KEYCHAIN_CLIENT_ID)
         client_secret = get_secret(ENV_CLIENT_SECRET, KEYCHAIN_CLIENT_SECRET)
-
         if args.flow == "client_credentials":
             token = get_client_credentials_token(tenant_id, client_id, client_secret)
         elif args.flow == "auth_code":
@@ -99,29 +129,8 @@ def main() -> int:
         else:
             token = get_device_code_token(tenant_id, client_id, client_secret)
 
-        message = read_body(args)
-        content_type = "html" if args.html else "text"
-
-        # Reply endpoint: /me/messages/{id}/reply or /me/messages/{id}/replyAll
-        endpoint = "replyAll" if args.reply_all else "reply"
-        url = f"{GRAPH_BASE}/me/messages/{urllib.parse.quote(args.message_id, safe='')}/{endpoint}"
-
-        payload = {
-            "message": {
-                "body": {
-                    "contentType": content_type,
-                    "content": message if args.html else message.replace("\n", "<br>"),
-                }
-            }
-        }
-
-        if args.dry_run:
-            print(f"Target: {url}")
-            print(json.dumps(payload, ensure_ascii=False, indent=2))
-            return 0
-
         result = http_post_json(url, token, payload)
-        print(f"Reply sent successfully: {result.get('id', 'OK')}")
+        print(f"회신 발송됨: {result.get('id', 'OK')}")
         return 0
 
     except Exception as exc:

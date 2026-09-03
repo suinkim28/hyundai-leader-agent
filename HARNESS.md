@@ -1,4 +1,4 @@
-# HARNESS.md — 실행 환경 (H Code Desktop)
+# HARNESS.md: 실행 환경 (H Code Desktop)
 
 이 스켈레톤은 **Claude Code CLI 를 감싼 H Code Desktop** 위에서 돈다.
 
@@ -36,7 +36,7 @@ UI 가 낯설다는 것이 문제였다. CLI 래퍼는 **실행 기반은 3안, 
 판정한다. **"파일이 있는가"가 아니라 "실제로 돌았는가"를 본다.**
 
 판정 기준점은 `session_start` 다. 세션이 한 번이라도 열렸다면 이 훅은 반드시
-돌았어야 한다. 그 흔적이 있는데 다른 훅의 흔적이 없다면 그때가 진짜 문제다 —
+돌았어야 한다. 그 흔적이 있는데 다른 훅의 흔적이 없다면 그때가 진짜 문제다: 
 하네스가 특정 훅 종류만 무시하고 있다는 뜻이다.
 
 ---
@@ -47,14 +47,14 @@ H Code Desktop 담당자에게 확인하거나, `/selftest` 로 직접 확인한
 
 | # | 확인 항목 | 왜 중요한가 | 확인 방법 |
 | ---: | --- | --- | --- |
-| 1 | **프로젝트 루트** 를 워크스페이스 폴더로 잡는가 | 어긋나면 `CLAUDE.md`·훅·명령이 통째로 안 읽힌다 | `verify_harness.py` 의 `프로젝트 루트` 행 |
+| 1 | **프로젝트 루트** 를 워크스페이스 폴더로 잡는가 | 어긋나면 `CLAUDE.md`, 훅, 명령이 통째로 안 읽힌다 | `verify_harness.py` 의 `프로젝트 루트` 행 |
 | 2 | `.claude/settings.json` 의 **훅 등록**을 존중하는가 | 안전장치 전부 | `/selftest` |
 | 3 | `permissions.allow` 를 존중하는가 | 조회마다 확인 창이 떠서 못 쓰게 된다 | 조회를 몇 번 시켜 본다 |
 | 4 | **워크스페이스 신뢰** 를 어떻게 처리하는가 | 미신뢰면 allow 25개가 통째로 무시된다 | 아래 §4 |
 | 5 | **Bash 도구**를 쓸 수 있는가 | `scripts/` 전부가 여기 의존한다 | 조회 스크립트를 한 번 돌려 본다 |
 | 6 | **슬래시 명령**(`/`)을 CLI 로 넘기는가, 자체 UI 가 가로채는가 | 루틴 호출 경로 | `/morning-brief` 입력 |
-| 7 | **MCP 설정**을 어디서 읽는가 (`.mcp.json` / 래퍼 자체 레지스트리) | Confluence·Jira 연결 | `claude mcp list` 또는 래퍼 설정 화면 |
-| 8 | **헤드리스 실행**(`claude -p`)이 가능한가, CLI 바이너리 경로는 어디인가 | 06:00·08:00·17:00 무인 루틴 | 아래 §5 |
+| 7 | **MCP 설정**을 어디서 읽는가 (`.mcp.json` / 래퍼 자체 레지스트리) | Confluence, Jira 연결 | `claude mcp list` 또는 래퍼 설정 화면 |
+| 8 | **헤드리스 실행**(`claude -p`)이 가능한가, CLI 바이너리 경로는 어디인가 | 06:00, 08:00, 17:00 무인 루틴 | 아래 §5 |
 | 9 | 대화 기록 **저장 위치와 보존 기간** | 감사 로그 정책 (`SECURITY.md` §8) | 래퍼 문서 |
 
 1~5 는 **막히면 대안이 없다.** 6~9 는 대안이 있다.
@@ -70,8 +70,7 @@ H Code Desktop 담당자에게 확인하거나, `/selftest` 로 직접 확인한
 | `프로젝트 루트` 불일치 | 래퍼가 다른 디렉터리에서 CLI 를 띄움 | 워크스페이스 폴더를 직접 열어 시작. 안 되면 래퍼 담당자에게 작업 폴더 지정 방법 확인 |
 | 훅 파일은 있는데 **실행 흔적 없음** | 래퍼가 훅을 지원하지 않거나 자체 설정으로 덮어씀 | **실사용 중단.** §6 축소 운영으로 전환하고 래퍼 담당자에게 에스컬레이션 |
 | `session_start` 만 안 됨 | 래퍼가 SessionStart 이벤트를 안 넘김 | 부트스트랩을 `/bootstrap` 수동 호출로 대체. `SETUP.md` §5 에 챔피언이 직접 챙기도록 명시 |
-| `guard_external_actions` 안 됨 | PreToolUse 미지원 | **가장 심각.** 발송·변경 스크립트를 `scripts/` 밖으로 빼서 물리적으로 못 부르게 한다. 초안까지만 운영 |
-| `cite_sources`·`grounding_check` 안 됨 | Stop 훅 미지원 | 기능은 유지되나 자동 점검이 사라진다. `PROFILE.md` §4 에 출처 규칙을 강하게 적어 보완 |
+| `guard_external_actions` 안 됨 | PreToolUse 미지원 | **가장 심각.** 발송, 변경 스크립트를 `scripts/` 밖으로 빼서 물리적으로 못 부르게 한다. 초안까지만 운영 |
 | `protect_secrets` 안 됨 | PreToolUse 미지원 | 자격증명을 워크스페이스 밖(OS 저장소)에만 두면 노출면이 줄어든다. 이미 그렇게 설계돼 있다 |
 | 조회마다 확인 창 | 워크스페이스 미신뢰 또는 `permissions.allow` 미지원 | §4 |
 | `/morning-brief` 가 안 먹힘 | 래퍼가 `/` 를 가로챔 | 평상어로 호출한다 (§7) |
@@ -97,11 +96,11 @@ this workspace has not been trusted.
 2. `~/.claude.json` 의 해당 경로에 `hasTrustDialogAccepted: true` 를 넣는다.
 
 래퍼가 자체 신뢰 흐름을 갖고 있으면 그것을 따른다. **본부장에게 신뢰 확인
-창을 보여주지 않는다** — 챔피언이 세팅 단계에서 끝내 둔다.
+창을 보여주지 않는다**: 챔피언이 세팅 단계에서 끝내 둔다.
 
 ---
 
-## 5. 무인 루틴 (06:00 · 08:00 · 17:00)
+## 5. 무인 루틴 (06:00, 08:00, 17:00)
 
 무인 실행은 래퍼 UI 가 아니라 **CLI 를 직접 호출**한다. 래퍼가 CLI 를 번들로
 갖고 있으면 PATH 에 없을 수 있으므로 경로를 지정한다.
@@ -176,7 +175,7 @@ mv scripts/reply_outlook_mail.py scripts/send_teams_reply.py \
 
 | 그대로 옮겨지는 것 | 하네스 종속 |
 | --- | --- |
-| `SYSTEM.md` `PROFILE.md` `ORG.md` `ROUTINES.md` `BOOTSTRAP.md` `CONNECTIONS.md` `SECURITY.md` | `.claude/settings.json` (훅·권한 등록 형식) |
+| `SYSTEM.md` `PROFILE.md` `ORG.md` `ROUTINES.md` `BOOTSTRAP.md` `CONNECTIONS.md` `SECURITY.md` | `.claude/settings.json` (훅, 권한 등록 형식) |
 | `scripts/` 전부 (표준 라이브러리만 씀) | `.claude/commands/` (슬래시 명령 형식) |
 | `templates/` `knowledge_base/` 및 모든 산출물 | `.claude/hooks/` 의 **입출력 규약** (스크립트 로직은 유지) |
 

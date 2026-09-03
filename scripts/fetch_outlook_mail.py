@@ -1,11 +1,26 @@
 #!/usr/bin/env python3
-"""Fetch Outlook mail messages from Microsoft Graph."""
+"""Outlook 메일 조회 (읽기).
+
+어디에 쓰는가
+-------------
+R2 아침 브리핑, R4 답변 초안, R5 결재 검토.
+
+    bin/graph mail --unread --top 30 --json
+    bin/graph mail --search "품질 리뷰"
+    bin/graph mail --id <message_id>          # 본문 전문을 읽는다
+
+목록은 미리보기(bodyPreview) 까지만 준다. 회신 초안을 쓰려면 `--id` 로
+본문 전문을 먼저 읽는다. 미리보기만 보고 답장을 쓰지 않는다.
+"""
 
 from __future__ import annotations
 
 import argparse
+import html
 import json
+import re
 import sys
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
@@ -65,7 +80,13 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--search",
-        help='Graph $search query, for example: "from:person@example.com".',
+        help='Graph $search query, for example: "from:person@example.com". '
+             "Graph 제약으로 --unread, --since 와 함께 쓸 수 없다.",
+    )
+    parser.add_argument(
+        "--id",
+        dest="message_id",
+        help="이 메시지 하나의 본문 전문을 읽는다. 회신 초안을 쓰기 전에 쓴다.",
     )
     parser.add_argument(
         "--flow",
@@ -126,6 +147,12 @@ def fetch_messages(
 
     headers_search = False
     if search:
+        if filters:
+            raise ValueError(
+                "--search 는 --unread, --since 와 함께 쓸 수 없습니다 "
+                "(Graph 가 $search 와 $filter 동시 사용을 거부합니다).\n"
+                "  검색어로 먼저 찾은 뒤 결과에서 골라내십시오."
+            )
         params["$search"] = f'"{search}"'
         headers_search = True
     else:
@@ -148,6 +175,50 @@ def fetch_messages(
     return data.get("value", [])
 
 
+def html_to_text(value: str) -> str:
+    """본문 HTML 을 읽을 수 있는 평문으로 줄인다."""
+    text = re.sub(r"(?is)<(script|style).*?</\1>", "", value)
+    text = re.sub(r"(?i)<br\s*/?>", "\n", text)
+    text = re.sub(r"(?i)</(p|div|tr|li|h[1-6])>", "\n", text)
+    text = re.sub(r"(?s)<[^>]+>", "", text)
+    text = html.unescape(text)
+    text = re.sub(r"[ \t]+", " ", text)
+    return re.sub(r"\n{3,}", "\n\n", text).strip()
+
+
+def fetch_one(token: str, message_id: str) -> dict:
+    fields = ("id,subject,from,sender,toRecipients,ccRecipients,receivedDateTime,"
+              "isRead,importance,hasAttachments,webLink,body,conversationId")
+    url = (f"{GRAPH_BASE}/me/messages/{urllib.parse.quote(message_id, safe='')}"
+           f"?$select={fields}")
+    return http_get_json(url, token)
+
+
+def print_one(message: dict) -> None:
+    def people(key):
+        return ", ".join(
+            f"{(r.get('emailAddress') or {}).get('name','')} "
+            f"<{(r.get('emailAddress') or {}).get('address','')}>".strip()
+            for r in (message.get(key) or [])
+        )
+
+    sender = (message.get("from") or {}).get("emailAddress") or {}
+    print(f"제목: {message.get('subject') or '(제목 없음)'}")
+    print(f"보낸이: {sender.get('name','')} <{sender.get('address','')}>")
+    if people("toRecipients"):
+        print(f"받는이: {people('toRecipients')}")
+    if people("ccRecipients"):
+        print(f"참조: {people('ccRecipients')}")
+    print(f"수신: {message.get('receivedDateTime','')}")
+    if message.get("hasAttachments"):
+        print("첨부: 있음")
+    print(f"id: {message.get('id')}")
+    body = message.get("body") or {}
+    content = body.get("content") or ""
+    print("\n--- 본문 ---")
+    print(html_to_text(content) if body.get("contentType") == "html" else content.strip())
+
+
 def main() -> int:
     args = parse_args()
 
@@ -163,6 +234,14 @@ def main() -> int:
             token = get_auth_code_token(tenant_id, client_id, client_secret)
         else:
             token = get_device_code_token(tenant_id, client_id, client_secret)
+
+        if args.message_id:
+            message = fetch_one(token, args.message_id)
+            if args.json:
+                print(json.dumps(message, ensure_ascii=False, indent=2))
+            else:
+                print_one(message)
+            return 0
 
         messages = fetch_messages(
             token=token,
