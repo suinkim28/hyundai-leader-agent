@@ -18,12 +18,11 @@
 
 값은 워크스페이스 파일에 절대 쓰지 않는다. `.env` 도 만들지 않는다.
 
-대화를 거치지 않는 경로
------------------------
-AX 챔피언이 세팅할 때는 `--prompt` 를 쓴다. 입력 창이 떠서 값이 대화 기록에
-남지 않는다. 본부장이 직접 할 때는 창을 다루는 부담이 있어 기본값이 아니다.
-
-    python3 scripts/setup_credentials.py --prompt
+입력 경로는 하나뿐이다
+----------------------
+값은 **대화창을 통해서만** 받는다. 입력 창을 띄우는 경로는 없앴다.
+본부장이 다뤄야 할 화면이 늘어나기 때문이다. 시크릿이 세션 로그에 남는
+문제는 SECURITY.md 에 적었고, PoC 종료 시 재발급으로 처리한다.
 
 확인만
 ------
@@ -109,53 +108,33 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--stdin", action="store_true",
-                   help="JSON 을 표준입력으로 받는다 (에이전트가 쓰는 기본 경로)")
-    g.add_argument("--prompt", action="store_true",
-                   help="입력 창을 띄운다. 값이 대화 기록에 남지 않는다 (챔피언용)")
+                   help="JSON 을 표준입력으로 받는다 (기본. 생략해도 같다)")
     g.add_argument("--check", action="store_true", help="저장 상태만 확인한다")
     args = ap.parse_args()
 
     if args.check:
         return report(read_back())
 
-    if args.prompt:
-        try:
-            import secret_prompt
-        except ImportError as exc:
-            print(f"입력 창 모듈을 못 불러왔습니다: {exc}", file=sys.stderr)
-            return 2
-        try:
-            values = secret_prompt.ask(
-                [(k, l, s) for k, l, _, s in FIELDS],
-                title="Microsoft Graph 자격증명",
-            )
-        except KeyboardInterrupt as exc:
-            print(f"취소됨: {exc}", file=sys.stderr)
-            return 130
-        except Exception as exc:
-            print(f"입력 창을 띄울 수 없습니다: {exc}", file=sys.stderr)
-            print("에이전트가 --stdin 경로로 저장하도록 하십시오.", file=sys.stderr)
-            return 2
-    else:
-        raw = sys.stdin.read().strip()
-        if not raw:
-            print("표준입력이 비어 있습니다. --stdin 으로 JSON 을 주거나 "
-                  "--prompt 로 입력 창을 띄우십시오.", file=sys.stderr)
-            return 2
-        try:
-            values = json.loads(raw)
-        except json.JSONDecodeError as exc:
-            print(f"JSON 을 읽지 못했습니다: {exc}", file=sys.stderr)
-            return 2
-        if not isinstance(values, dict):
-            print("JSON 최상위는 객체여야 합니다.", file=sys.stderr)
-            return 2
+    raw = sys.stdin.read().strip()
+    if not raw:
+        print("표준입력이 비어 있습니다. JSON 을 넘기십시오:\n"
+              '  {"client_id": "...", "tenant_id": "...", "client_secret": "..."}',
+              file=sys.stderr)
+        return 2
+    try:
+        values = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        print(f"JSON 을 읽지 못했습니다: {exc}", file=sys.stderr)
+        return 2
+    if not isinstance(values, dict):
+        print("JSON 최상위는 객체여야 합니다.", file=sys.stderr)
+        return 2
 
     problems = validate(values)
     if problems:
         print("입력값에 문제가 있습니다. 저장하지 않았습니다.", file=sys.stderr)
-        for p in problems:
-            print(f"  - {p}", file=sys.stderr)
+        for problem in problems:
+            print(f"  - {problem}", file=sys.stderr)
         return 2
 
     try:

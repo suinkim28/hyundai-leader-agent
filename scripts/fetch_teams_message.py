@@ -191,18 +191,8 @@ def keychain_get(service: str) -> str:
     except Exception:
         pass
 
-    # 과거 위치 폴백 — 이전 세팅을 쓰던 PC 를 위해 남겨 둔다.
-    env_key = service.upper().replace("-", "_")
-    val = os.environ.get(env_key)
-    if val:
-        return val
-    legacy = os.path.expanduser("~/.config/microsoft-graph/secrets.json")
-    if os.path.exists(legacy):
-        try:
-            with open(legacy, "r", encoding="utf-8") as f:
-                return (json.load(f).get(service) or "").strip()
-        except Exception:
-            pass
+    # 공유 경로(~/.config/microsoft-graph)는 읽지 않는다. 같은 Mac 에서 다른
+    # 워크스페이스가 쓰던 토큰을 이 에이전트가 주워 오면 안 된다.
     return ""
 
 def keychain_set(service: str, value: str) -> None:

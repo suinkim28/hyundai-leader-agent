@@ -91,13 +91,8 @@ http://localhost:8765/callback
 세션 시작 훅이 자격증명 없음을 감지해 설정 절차로 보낸다. 에이전트가 세 값을
 여쭈면 붙여넣는다. 저장 후에는 마스킹된 형태만 화면에 남는다.
 
-터미널로 직접 하려면 (값이 대화 기록에 남지 않는다):
-
-```
-python3 bin/graph setup --prompt
-python3 bin/graph login
-python3 bin/graph check
-```
+**입력 창은 뜨지 않는다.** 값은 대화창에서만 받는다.
+에이전트가 `bin/graph setup` 을 표준입력으로 호출해 저장한다.
 
 ---
 
@@ -164,7 +159,6 @@ Atlassian MCP 가 붙어 있으면 `/meeting-prep` 이 Confluence·Jira 까지 �
 - [ ] 읽기 5종 전부 응답
 - [ ] 발송을 훅이 막는 것 확인
 - [ ] `/morning-brief` 가 실제 데이터로 한 장을 만든다
-- [ ] Windows PC 에서 `bin/graph setup --prompt` 로 DPAPI 저장·재읽기 확인
-      (macOS 에서는 검증되지 않는 경로다)
+- [ ] Windows PC 에서 DPAPI 저장·재읽기 확인 (macOS 에서는 검증되지 않는 경로다)
 - [ ] `.claude/graph_scopes.txt` 를 현대차 승인 목록으로 되돌린다
       (테스트에서 발송 3종을 뺐다면 다시 넣는다)

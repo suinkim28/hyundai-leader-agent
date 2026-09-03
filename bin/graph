@@ -49,7 +49,7 @@ COMMANDS: dict[str, tuple[str, str, bool]] = {
 }
 
 SETUP = {
-    "setup":  ("setup_credentials.py", "자격증명 저장 (에이전트가 --stdin 으로 호출)"),
+    "setup":  ("setup_credentials.py", "자격증명 저장. JSON 을 표준입력으로 받는다"),
     "check":  ("check_connections.py", "연결 진단 — 무엇이 되고 무엇이 안 되는지"),
 }
 

@@ -313,11 +313,6 @@ python3 bin/graph check
 에이전트가 `.claude/commands/setup.md` 절차대로 값을 여쭙고 저장한 뒤
 로그인까지 진행한다. 자격증명이 없으면 세션 시작 훅이 자동으로 이 절차를 띄운다.
 
-AX 챔피언이 대신 세팅할 때는 입력 창을 쓴다. 값이 대화 기록에 남지 않는다.
-
-```
-python3 bin/graph setup --prompt
-```
 
 ### 스코프
 

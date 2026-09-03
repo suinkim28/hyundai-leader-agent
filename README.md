@@ -3,13 +3,7 @@
 본부장 1:1 AX Session 산출물. **본부장 한 분당 하나씩 복사해서 쓰는 초기
 구조**다. 이 폴더를 통째로 본부장 PC에 두고 이름만 바꾸면 그 순간부터 동작한다.
 
-작성 2026-09-01, 갱신 2026-09-03 · 엘리스 김수인 CRO
-레포 `elice/ax/projects/hyundai-leader-agent`
-
-> **2026-09-03 갱신** — 현대차 ICT 가 `HMG-LeaderAXSession-PILOT` 앱으로
-> Microsoft Graph 위임 권한 19종을 승인했다. 자격증명 설정을 에이전트가
-> 대신하도록 바꿨고(`.claude/commands/setup.md`), Graph 단일 진입점
-> `bin/graph` 와 Files·Notes 조회를 추가했다. 자세한 것은 `SETUP.md` 하단.
+작성 2026-09-01 · 엘리스 김수인 CRO
 
 ---
 

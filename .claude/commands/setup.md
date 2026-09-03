@@ -5,6 +5,13 @@ description: 최초 설정 — 자격증명 저장, 로그인, 연결 확인까�
 본부장님을 대신해 설정을 진행한다. **본부장님은 터미널을 열지 않는다.**
 명령어를 알려드리지 말고, 필요한 값만 여쭙고 나머지는 직접 실행한다.
 
+## 값을 받는 방법은 하나뿐이다
+
+**대화창에서 받는다.** 입력 창을 띄우지 않는다. 다른 방법을 찾지 않는다.
+본부장님이 다뤄야 할 화면을 늘리지 않는 것이 이 설정의 목적이다.
+
+---
+
 ## 1. 지금 무엇이 되고 무엇이 안 되는지 먼저 본다
 
 ```
@@ -18,23 +25,21 @@ python3 bin/graph check
 없으면 이렇게 여쭙는다. 세 값을 한 번에 받는다.
 
 > 메일·일정·Teams 를 읽으려면 회사에서 발급한 값 세 개가 필요합니다.
-> ICT 에서 받으신 안내에 있는 **Client ID, Tenant ID, Client Secret** 을
-> 그대로 붙여넣어 주십시오.
+> **Client ID, Tenant ID, Client Secret** 을 이 창에 그대로 붙여넣어 주십시오.
 
 받으면 즉시 저장한다. **값을 다시 화면에 쓰지 않는다.**
 
 ```
-python3 bin/graph setup --stdin <<'JSON'
+python3 bin/graph setup <<'JSON'
 {"client_id": "...", "tenant_id": "...", "client_secret": "..."}
 JSON
 ```
 
-스크립트가 마스킹된 결과만 돌려준다. 그것만 본부장님께 전한다.
+스크립트가 마스킹된 결과(`d48b******639c`)만 돌려준다. 그것만 본부장님께 전한다.
 
 형식 오류가 나면 저장되지 않는다. 어느 값이 문제인지 알려드리고 다시 받는다.
-
-> AX 챔피언이 대신 세팅하는 자리라면 `python3 bin/graph setup --prompt` 를 쓴다.
-> 입력 창이 떠서 값이 대화 기록에 남지 않는다.
+`Client Secret` 자리에 GUID 가 들어오면 `비밀 ID` 를 복사하신 것이므로,
+Entra 의 **`값(Value)` 열**을 다시 확인해 달라고 말씀드린다.
 
 ## 3. 로그인
 
@@ -48,9 +53,13 @@ python3 bin/graph login
 > 한 번만 하시면 됩니다.
 
 실패하면 메시지를 읽고 판단한다.
-- `AADSTS65001` 관리자 동의 누락 → ICT 문의
-- `invalid_client` 시크릿 오타 또는 만료 → 2번으로 되돌아간다
-- `invalid_scope` `.claude/graph_scopes.txt` 에 승인되지 않은 권한이 있다
+
+| 메시지 | 원인 | 조치 |
+| --- | --- | --- |
+| `AADSTS50011` | 리디렉션 URI 불일치 | 앱 등록에 `http://localhost:8765/callback` |
+| `AADSTS65001` | 관리자 동의 누락 | ICT 문의 |
+| `AADSTS70011` invalid_scope | 승인 안 된 권한이 요청 스코프에 있음 | `.claude/graph_scopes.txt` |
+| `invalid_client` | 시크릿 오타·만료 | 2번으로 되돌아간다 |
 
 ## 4. Confluence · Jira
 
@@ -71,6 +80,5 @@ python3 bin/graph check
 ## 6. 이어서
 
 설정이 끝나면 멈추지 말고 바로 `/bootstrap` 으로 넘어간다.
-본부장님께는 이렇게 말한다.
 
 > 연결은 끝났습니다. 이제 본부장님께 맞추는 질문을 드리겠습니다. 20분 정도 걸립니다.
