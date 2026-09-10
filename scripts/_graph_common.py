@@ -222,20 +222,20 @@ def keychain_get(service: str) -> str:
     except Exception:
         pass
 
-    # 공유 경로(~/.config/microsoft-graph)는 읽지 않는다. 같은 Mac 에서 다른
-    # 워크스페이스가 쓰던 토큰을 이 에이전트가 주워 오면 안 된다.
+    # `secret_store` 가 아는 곳에 없으면 없는 것으로 본다. 다른 경로를
+    # 뒤지지 않는다: 같은 PC 의 다른 워크스페이스가 쓰던 토큰을 주워 오면
+    # 어느 계정으로 도는지 알 수 없게 된다.
     return ""
 
 
 def keychain_set(service: str, value: str) -> None:
     """저장소에 값 하나를 쓴다.
 
-    실제 구현은 `secret_store` 에 위임한다 (macOS 키체인, Windows DPAPI,
-    그 외 플랫폼의 파일 폴백을 한곳에서 관리하기 위해). 예전에는 이 함수가
-    자체적으로 macOS 만 처리하고 Windows/Linux 는 평문 파일
-    (`~/.config/microsoft-graph/secrets.json`) 에 썼는데, 그러면 refresh
-    token 이 Windows 에서 DPAPI 암호화 없이 평문으로 남는다. `keychain_get`
-    은 이미 `secret_store` 에 위임하고 있었으므로 읽기/쓰기 경로를 맞춘다.
+    실제 구현은 `secret_store` 에 위임한다: macOS 키체인, Windows DPAPI,
+    그 외 플랫폼은 `~/.config/hmg-agent/secrets.json` (권한 0600).
+    읽기(`keychain_get`)와 쓰기가 같은 곳을 보도록 한곳에서 관리한다.
+    **평문 파일에 쓰지 않는다.** Windows 에서 refresh token 이 DPAPI 암호화
+    없이 남으면 그 PC 를 쓰는 누구나 본부장 계정으로 Graph 를 호출할 수 있다.
     """
     from secret_store import keychain_set as _set
     _set(service, value)
