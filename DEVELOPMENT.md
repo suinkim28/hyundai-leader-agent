@@ -16,10 +16,11 @@
 | 배포물 | GitHub `main` 을 zip 으로 받아 본부장 PC 에 폴더째 복사한다. `.git` 이 없으므로 본부장 PC 에서는 git 을 쓰지 않는다 |
 | 사내망 작업 반영 | 사내망에서는 git 을 못 쓴다. zip 으로 받아 이 리포에 덮어쓴다. Windows 를 거치면 실행 비트가 전부 사라지므로 내용만 덮어쓴다: `rsync -rc --no-perms --exclude PROFILE.md --exclude ORG.md --exclude '__pycache__/' <zip>/ ./` |
 
-`PROFILE.md`, `ORG.md`, `attachments/`, `briefings/`, `knowledge_base/`, `logs/` 는
-`.gitignore` 에 있어 커밋되지 않는다. `decisions/`, `drafts/`, `meetings/`,
-`projects/` 는 `.gitkeep` 만 추적한다. **`git add -A` 를 쓰지 않는다.** 2026-09-03
-에 이것 때문에 본부장 프로파일과 전사본이 커밋돼 히스토리를 다시 쌓았다.
+`PROFILE.md`, `ORG.md` 와 산출물 폴더 전부(`attachments/`, `briefings/`,
+`knowledge_base/`, `logs/`, `meetings/`, `decisions/`, `drafts/`, `projects/`)는
+`.gitignore` 에 있어 `.gitkeep` 외에는 커밋되지 않는다. 그래도 **`git add -A` 는
+쓰지 않는다.** 2026-09-03 에 이것 때문에 본부장 프로파일과 전사본이 커밋돼
+히스토리를 다시 쌓았다.
 
 ---
 
@@ -49,9 +50,8 @@ git clean -ndX                    # 삭제될 무시 파일 미리보기. PROFIL
 git clean -fdX                    # 실제 삭제 (추적 파일은 건드리지 않는다)
 ```
 
-`git clean -X` 는 `.gitignore` 대상만 지우므로 소스는 안전하다. 그 뒤
-`decisions/`, `drafts/`, `meetings/`, `projects/` 의 미추적 파일은 `git clean -fd`
-로 따로 지운다 (이 폴더들은 ignore 가 아니라 미추적이다).
+`git clean -X` 는 `.gitignore` 대상만 지우므로 소스는 안전하다. 산출물 폴더가
+전부 ignore 대상이라 이 한 번으로 개인 데이터가 비워진다.
 
 ---
 
@@ -180,3 +180,8 @@ bin/graph reply-mail <id> --message "테스트" --dry-run
   흡수했다. `CONNECTIONS.md` 는 뒤에 덧붙은 절이 앞 절과 겹치고 Atlassian
   등록 명령이 두 곳에서 달랐다 (`sse` / `http`). Atlassian 은 챔피언이 사내
   절차로 연결하므로 등록 상세를 문서에서 뺐다
+- **지시 작업 로깅**: 본부장이 루틴 밖으로 지시한 작업은
+  `projects/YYYY-MM-DD-<이름>/README.md` 부터 만들어 그 안에 남기도록 했다
+  (`SYSTEM.md` §8-2-1, `~/Secretary` 의 운영 방식을 그대로 옮김). 그 전에는
+  루틴 밖 분석 결과가 화면 답변으로 끝나 사라졌다. 산출물 폴더
+  (`meetings/`, `decisions/`, `drafts/`, `projects/`)를 `.gitignore` 에 추가했다.

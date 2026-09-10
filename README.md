@@ -77,6 +77,7 @@
 | 수시 | 개인 및 조직 맥락을 반영한 자료와 답변 초안 작성 | `drafts/` |
 | 결재 시 | 보고자료 요약과 근거 부족 및 상충 지점 표시 | `briefings/..._결재검토.md` |
 | 회의 중 | 과제의 기획, 지연, 리스크, 담당자 추적 | `ORG.md`, `projects/` |
+| 수시 | 본부장이 지시한 일회성 작업(분석, 정리, 비교표) | `projects/YYYY-MM-DD-<이름>/` |
 | 회의 후 | 녹음 전사 원문 저장, 요약, 실행사항 도출 | `meetings/transcripts/`, `meetings/logs/` |
 | 17:00 | 회고, 리더십 관찰, **장기기억 갱신** | `briefings/..._회고.md` |
 
@@ -188,7 +189,7 @@ bin\graph.cmd check
 │   ├── hooks/             안전장치 3종
 │   └── commands/          슬래시 명령 11종
 ├── scripts/           조회, 발송, 전사, 진단 도구
-├── templates/         산출물 서식 5종
+├── templates/         산출물 서식 6종
 └── briefings/ meetings/ decisions/ projects/ drafts/ knowledge_base/ logs/
 ```
 

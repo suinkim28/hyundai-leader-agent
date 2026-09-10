@@ -84,7 +84,7 @@ WHERE_TO_WRITE = (
     "  본부장 개인, 선호, 답변 규칙  -> PROFILE.md\n"
     "  인물, 조직, 과제, 약어        -> ORG.md\n"
     "  회의에서 내려진 결정과 근거   -> decisions/\n"
-    "  과제 상태와 리스크 변화       -> projects/\n"
+    "  과제 상태, 지시받은 작업 산출물 -> projects/YYYY-MM-DD-<이름>/\n"
     "  외부 참고자료                 -> knowledge_base/"
 )
 

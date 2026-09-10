@@ -35,4 +35,16 @@ attachments/raw/*
 attachments/extracted/*
 !attachments/extracted/.gitkeep
 
+# 아래도 본부장 한 분의 것이다. 회의록, 결정, 초안, 지시받은 작업 산출물.
+meetings/logs/*
+!meetings/logs/.gitkeep
+meetings/transcripts/*
+!meetings/transcripts/.gitkeep
+decisions/*
+!decisions/.gitkeep
+drafts/*
+!drafts/.gitkeep
+projects/*
+!projects/.gitkeep
+
 .tmp/
