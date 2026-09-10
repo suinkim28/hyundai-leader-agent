@@ -1,6 +1,6 @@
 # CONNECTIONS.md: 연결 설정과 대체 경로
 
-## 0. 명령을 어떻게 부르는가
+## 1. 명령을 어떻게 부르는가
 
 Graph 조회와 발송은 전부 `bin/graph` 하나로 부른다. **macOS 와 Windows 가
 같다.**
@@ -23,7 +23,7 @@ Python 자체가 없으면 무엇도 돌지 않는다. python.org 에서 3.11 �
 확인해 준다.
 
 
-## 0. 무엇이 없어도 되는가
+## 2. 무엇이 없어도 되는가
 
 | 연결 | 없으면 잃는 것 | 그래도 되는 것 |
 | --- | --- | --- |
@@ -39,7 +39,7 @@ Python 자체가 없으면 무엇도 돌지 않는다. python.org 에서 3.11 �
 
 ---
 
-## 1. 실행 환경
+## 3. 실행 환경
 
 | 항목 | 내용 |
 | --- | --- |
@@ -64,7 +64,7 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
 
 ---
 
-## 2. Microsoft Graph (메일, 일정, Teams)
+## 4. Microsoft Graph (메일, 일정, Teams)
 
 ### 필요한 권한 (위임 / Delegated)
 
@@ -101,7 +101,7 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
    클라이언트 시크릿)를 받는다.
 2. **파일에 적지 말고** OS 자격증명 저장소에 넣는다. 본부장 PC 는 전부
    Windows 이므로, 값은 대화창으로 받아 에이전트가 `bin/graph setup` 을 통해
-   저장한다(§7 참고). 저장 위치는 `scripts/secret_store.py` 기준으로 다음과 같다.
+   저장한다(§14 참고). 저장 위치는 `scripts/secret_store.py` 기준으로 다음과 같다.
 
    | OS | 저장 위치 |
    | --- | --- |
@@ -136,7 +136,7 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
    터미널에 함께 출력되는 URL을 직접 열어도 된다.
 
    이 앱은 `http://localhost` 리디렉션을 쓰는 **퍼블릭 클라이언트**로
-   등록돼 있어(§7 참고), 로그인은 PKCE로 증명하고 Client Secret은 이
+   등록돼 있어(§14 참고), 로그인은 PKCE로 증명하고 Client Secret은 이
    과정에 쓰이지 않는다. 로그인에 성공하면 **refresh token 이 자격증명과
    같은 저장소(Windows DPAPI, macOS 키체인)에 저장**되어, 이후 세션이나
    창을 새로 열어도 **다시 로그인할 필요가 없다.** 재로그인이 필요한
@@ -162,7 +162,7 @@ bin/graph mail --search "키워드" --top 10
 
 ---
 
-## 3. Confluence / Jira (Atlassian MCP)
+## 5. Confluence / Jira (Atlassian MCP)
 
 ```bash
 claude mcp add --transport sse atlassian https://mcp.atlassian.com/v1/sse
@@ -179,10 +179,10 @@ claude mcp list          # 연결 상태 확인
 
 ---
 
-## 4. 음성 전사 (STT)
+## 6. 음성 전사 (STT)
 
 키는 본부장님이 대화창에 값을 주시면 에이전트가 저장한다(Windows 는 DPAPI,
-macOS 는 키체인. §2 등록 절차와 같은 방식).
+macOS 는 키체인. §4 등록 절차와 같은 방식).
 
 ```bash
 bin/graph transcribe <오디오> --output meetings/transcripts/...
@@ -201,7 +201,7 @@ bin/graph transcribe <오디오> --output meetings/transcripts/...
 
 ---
 
-## 5. 외부 웹
+## 7. 외부 웹
 
 시장 동향(R1)과 법규, 경쟁사 조사에 쓴다. 사내 방화벽, 프록시 정책에 따라
 허용 도메인 화이트리스트가 필요할 수 있다.
@@ -214,7 +214,7 @@ bin/graph transcribe <오디오> --output meetings/transcripts/...
 
 ---
 
-## 6. SharePoint, OneNote
+## 8. SharePoint, OneNote
 
 Graph 권한 범위에 포함되는지 확인이 필요하다. 문서 보관처로 쓰이는 경우
 보고자료 검토(R5)와 과제 이력 통합의 입력이 된다.
@@ -223,7 +223,38 @@ Graph 권한 범위에 포함되는지 확인이 필요하다. 문서 보관처�
 
 ---
 
-## 7. 하지 않는 연결
+## 9. AIP 로 문서가 열리지 않을 때
+
+**평소에는 여기까지 올 일이 없다.** AIP(민감도 레이블)가 붙은 문서는 권한이
+있는 사용자에게는 투명하게 열리는 것이 확인됐다. 이 절은 그럼에도 읽히지
+않는 예외 상황에서 **시도해 볼 수 있는 참고**이지, 기본 절차가 아니다.
+
+**전제: 본인이 RMS 소유자인 파일에만 적용된다.** 다른 사람이 보호를 건
+문서는 이 방법으로 열리지 않으며, 열려고 시도하지 않는다.
+
+| 방법 | 쓸 수 있나 |
+| --- | --- |
+| `Unprotect-RMSFile` | **이 PC 에 없다. 쓰지 않는다** |
+| `Set-AIPFileLabel -RemoveLabel` | 쓸 수 있다. 단 AIP 클라이언트의 **자동 레이블 지정(Auto)을 꺼야** 동작한다 |
+
+호출할 때 두 가지가 자주 걸린다.
+
+- 실행 파일은 **`powershell.exe`** 로 정확히 적는다 (소문자 `powershell` 로는 잡히지 않을 수 있다)
+- 셸을 거치므로 `$` 는 `\$` 로 이스케이프한다
+
+레이블을 벗긴 뒤 본문을 읽는 경로는 다음과 같다. 곧바로 읽으려 하면 인코딩이
+섞여 깨진다.
+
+1. `python-docx` 등으로 본문을 추출한다
+2. **UTF-8 텍스트 파일로 저장한다** (`attachments/extracted/`)
+3. 저장한 파일을 읽는다
+
+**이 절차를 쓴 경우 어떤 파일에서 무엇을 왜 벗겼는지 본부장께 말한다.**
+조용히 처리하지 않는다.
+
+---
+
+## 10. 하지 않는 연결
 
 | 대상 | 사유 |
 | --- | --- |
@@ -235,7 +266,7 @@ Graph 권한 범위에 포함되는지 확인이 필요하다. 문서 보관처�
 
 ---
 
-## 8. 비용, 토큰 상한
+## 11. 비용, 토큰 상한
 
 사용량 상한 정책이 정해지면 본부장께 **사전에** 안내한다. 상한에 도달했을 때
 어떻게 되는지(중단되는지, 느려지는지)를 함께 알린다. 쓰다가 갑자기 멈추면
@@ -245,7 +276,7 @@ Graph 권한 범위에 포함되는지 확인이 필요하다. 문서 보관처�
 
 ---
 
-## 9. 진단 결과 기록
+## 12. 진단 결과 기록
 
 `check_connections.py` 결과를 `logs/YYYY-MM-DD/connections.txt` 에 남기고,
 요약을 `PROFILE.md` §3 의 연결 표에 옮긴다. 무엇이 언제부터 막혀 있었는지가
@@ -264,7 +295,7 @@ bin/graph check > logs/<오늘>/connections.txt 2>&1
 
 ---
 
-## 6. Atlassian (Confluence, Jira): 2026-09-03 추가
+## 13. Atlassian (Confluence, Jira): 2026-09-03 추가
 
 회의 준비(R3)와 과제 추적(R6)이 사내 지식과 이슈를 읽는 통로다.
 **MCP 등록은 에이전트가 실행하고, 브라우저 로그인만 본부장님이 하신다.**
@@ -302,7 +333,7 @@ bin/graph check
 
 ---
 
-## 7. Microsoft Graph 자격증명: 2026-09-03 승인 반영
+## 14. Microsoft Graph 자격증명: 2026-09-03 승인 반영
 
 현대차 ICT 가 `HMG-LeaderAXSession-PILOT` 앱으로 **위임 권한 19종**을 승인했다.
 승인 목록과 사용자 12명은 `source/ict/2026-09-03_Graph권한_승인결과.md` 에 있다.

@@ -117,7 +117,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b
 
 ## 1. D-7: 권한
 
-- [ ] Microsoft Graph 읽기 권한 승인 완료 (`CONNECTIONS.md` §2)
+- [ ] Microsoft Graph 읽기 권한 승인 완료 (`CONNECTIONS.md` §4)
 - [ ] Confluence / Jira MCP 연결 및 본부장 계정 로그인
 - [ ] SharePoint, OneNote 접근 범위 확인
 - [ ] 토큰, 비용 상한 정책 확인
@@ -126,7 +126,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b
 
 동시에 **승인 없이도 성립하는 최소 시나리오를 병행 준비한다.**
 승인을 기다리다가 세션 당일에 아무것도 못 보여주는 것이 최악이다
-(`CONNECTIONS.md` §0).
+(`CONNECTIONS.md` §1).
 
 ---
 
@@ -291,7 +291,7 @@ bin\graph.cmd check --quiet
    bin/graph login
    ```
 
-4. Atlassian MCP 를 연결한다 (`CONNECTIONS.md` §6)
+4. Atlassian MCP 를 연결한다 (`CONNECTIONS.md` §13)
 5. 확인한다
 
    ```

@@ -218,7 +218,7 @@ def check_mcp():
         return [Check(
             "Confluence / Jira MCP", FAIL, "atlassian 서버가 등록되지 않음",
             lost="사내 지식 검색, 과제 추적",
-            fallback="CONNECTIONS.md §3 등록 절차",
+            fallback="CONNECTIONS.md §5 등록 절차",
         )]
     connected = "connected" in lowered or "✓" in text
     if connected:

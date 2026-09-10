@@ -83,7 +83,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b
 ## 4. 자격증명
 
 - **`.env` 파일을 만들지 않는다.** OS 자격증명 저장소를 쓴다
-  (`CONNECTIONS.md` §2). `protect_secrets.py` 가 `.env` 쓰기를 막는다.
+  (`CONNECTIONS.md` §4). `protect_secrets.py` 가 `.env` 쓰기를 막는다.
 - 비밀값을 **대화, 회의록, Jira, Confluence, 메일에 붙여넣지 않는다.**
   계정 정보를 평문 메일로 받았다면 즉시 변경하고, 값을 어떤 파일에도 옮기지
   않는다.
