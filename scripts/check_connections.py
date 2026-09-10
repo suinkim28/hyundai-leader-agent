@@ -131,21 +131,23 @@ def _graph_token(client_id, tenant_id, client_secret):
     """
     try:
         sys.path.insert(0, str(ROOT / "scripts"))
-        import fetch_teams_message as ftm
+        import _graph_common as gc
     except Exception:
         return None
-    refresh_token = ftm.get_cached_refresh_token()
+    refresh_token = gc.get_cached_refresh_token()
     if not refresh_token:
         return None
     try:
-        token = ftm.http_post_form(
-            ftm.token_endpoint(tenant_id),
+        # 이 앱은 http://localhost 리디렉션을 쓰는 퍼블릭 클라이언트라
+        # client_secret 을 보내면 AADSTS700025 로 거부된다
+        # (scripts/_graph_common.py 의 같은 코멘트 참고).
+        token = gc.http_post_form(
+            gc.token_endpoint(tenant_id),
             {
                 "client_id": client_id,
                 "grant_type": "refresh_token",
                 "refresh_token": refresh_token,
-                "scope": ftm.DEVICE_SCOPES,
-                **({"client_secret": client_secret} if client_secret else {}),
+                "scope": gc.DEVICE_SCOPES,
             },
         )
         return token.get("access_token") or None
@@ -185,7 +187,14 @@ def check_graph_endpoints(token):
             hint = "권한 미승인" if exc.code in (401, 403) else f"HTTP {exc.code}"
             results.append(Check(name, FAIL, hint, lost, fallback))
         except Exception as exc:
-            results.append(Check(name, FAIL, type(exc).__name__, lost, fallback))
+            if "CERTIFICATE_VERIFY_FAILED" in str(exc):
+                results.append(Check(
+                    name, FAIL, "SSL 인증서 검증 실패 (사내 프록시 가능성)",
+                    lost,
+                    "pip install truststore 실행 후 재시도 (TODO.txt 'CERTIFICATE_VERIFY_FAILED' 참고, Python 3.10+ 필요)",
+                ))
+            else:
+                results.append(Check(name, FAIL, type(exc).__name__, lost, fallback))
     return results
 
 

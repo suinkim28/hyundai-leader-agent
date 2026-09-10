@@ -6,10 +6,9 @@
 `check_connections.py` 가 "바깥세상과 연결됐는가"를 본다면, 이것은
 **"내 안전장치가 살아 있는가"** 를 본다.
 
-Claude Code CLI 를 감싸는 래퍼(H Code Desktop 등) 위에서는 `.claude/settings.json`
-의 훅 등록이 존중되는지 밖에서 알 수 없다. 래퍼가 자체 설정으로 덮어썼거나,
-프로젝트 루트를 다르게 잡았거나, 훅 실행을 지원하지 않으면 **아무 오류 없이
-조용히 무시된다.**
+VS Code + Claude Code 확장은 `.claude/settings.json` 의 훅 등록을 표준으로
+존중한다. 그래도 이 컴퓨터에 Python 이 없거나, 워크스페이스를 신뢰하지
+않았거나, 프로젝트 루트를 다르게 잡으면 **아무 오류 없이 조용히 무시된다.**
 
 그 상태에서 이 워크스페이스는 겉보기에 정상 동작한다. 메일 발송 확인 창만
 안 뜰 뿐이다. 그리고 그 사실은 사고가 난 뒤에야 드러난다.
@@ -149,8 +148,9 @@ def check_python_runs_hooks():
 def check_workspace_root():
     """훅이 계산하는 프로젝트 루트가 실제 워크스페이스와 같은가.
 
-    래퍼가 다른 디렉터리에서 CLI 를 띄우면 $CLAUDE_PROJECT_DIR 이 어긋나
-    훅 경로가 통째로 빗나간다. 그러면 훅은 '없는 것'이 된다.
+    다른 디렉터리(멀티루트 워크스페이스 등)에서 확장이 CLI 를 띄우면
+    $CLAUDE_PROJECT_DIR 이 어긋나 훅 경로가 통째로 빗나간다.
+    그러면 훅은 '없는 것'이 된다.
     """
     env_root = os.environ.get("CLAUDE_PROJECT_DIR")
     if not env_root:
@@ -232,7 +232,7 @@ def check_harness_identity():
     """어떤 하네스 위에서 도는가. 판정이 아니라 기록이 목적이다."""
     hints = []
     for var in ("CLAUDECODE", "CLAUDE_CODE_ENTRYPOINT", "TERM_PROGRAM",
-                "H_CODE_DESKTOP", "HCODE_VERSION"):
+                "VSCODE_PID"):
         val = os.environ.get(var)
         if val:
             hints.append(f"{var}={val}")
@@ -252,7 +252,7 @@ def check_commands():
                       fix="스켈레톤 재복사")
     n = len(list(d.glob("*.md")))
     return Result("슬래시 명령", OK,
-                  f"{n}개 정의됨: 래퍼가 '/' 입력을 가로채면 "
+                  f"{n}개 정의됨. 본부장이 명령어를 몰라도 되게 "
                   f"평상어로도 호출 가능 (SYSTEM.md §6)")
 
 

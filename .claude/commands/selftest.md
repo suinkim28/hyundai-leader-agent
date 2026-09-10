@@ -4,10 +4,11 @@ description: 하네스 자가진단, 이 실행 환경에서 안전장치가 실
 
 **본부장 PC 에서 실사용을 시작하기 전에 반드시 한 번 통과시켜야 한다.**
 
-Claude Code CLI 를 감싸는 래퍼(H Code Desktop 등) 위에서는 훅 등록이 존중되는지
-밖에서 알 수 없다. 무시되더라도 오류 없이 조용히 넘어가므로, 겉보기에는
-정상 동작하면서 안전장치만 빠진 상태가 될 수 있다. 그 상태는 사고가 난 뒤에야
-드러난다.
+VS Code + Claude Code 확장은 공식 확장이므로 훅 등록이 표준으로 존중된다.
+그래도 이 컴퓨터에 Python 이 없거나, 워크스페이스를 신뢰하지 않았거나,
+프로젝트 루트가 어긋나면 훅은 오류 없이 조용히 안 돈다. 겉보기에는 정상
+동작하면서 안전장치만 빠진 상태가 될 수 있다. 그 상태는 사고가 난 뒤에야
+드러난다 (`HARNESS.md` §9 참고).
 
 순서대로 실행한다.
 
@@ -54,8 +55,9 @@ bin/graph verify
 - 실패한 항목마다 `HARNESS.md` 의 대응표에서 해당 행을 찾아 조치안을 붙인다
 - 결과를 `logs/YYYY-MM-DD/harness.txt` 에 저장한다
 
-```bash
-mkdir -p logs/<오늘> && bin/graph verify > logs/<오늘>/harness.txt 2>&1
+```powershell
+New-Item -ItemType Directory -Force -Path "logs\<오늘>" | Out-Null
+bin\graph.cmd verify > "logs\<오늘>\harness.txt" 2>&1
 ```
 
 **훅이 하나라도 죽어 있으면 실사용을 시작하지 않는다.** 판단은 챔피언이

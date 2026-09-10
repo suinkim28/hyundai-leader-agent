@@ -11,11 +11,28 @@
 set -u
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
-for PY in python3 py python; do
+# 한국어 Windows 는 콘솔 코드페이지가 cp949 라 Python 기본 출력 인코딩과
+# 어긋나 한글이 깨진다 (TODO.txt). PYTHONUTF8=1 로 항상 UTF-8 출력을 강제한다.
+export PYTHONUTF8=1
+
+# 순서 주의: py 를 가장 먼저 찾는다.
+#
+# Windows 10/11 은 실제 Python 이 없어도 python.exe/python3.exe 라는
+# 가짜 "App Execution Alias" 를 기본으로 PATH 에 깔아 둔다. 이 가짜는
+# 실행하면 "Microsoft Store 에서 설치하십시오" 라고만 하고 끝난다.
+# python.org/winget 설치본은 python3 라는 이름을 만들지 않으므로,
+# python3 를 먼저 찾으면 항상 이 가짜만 잡혀 진짜 Python 이 있어도
+# "못 찾았다"는 결과가 나온다 (2026-09-09 실제로 겪음). py 런처는
+# Windows 가 흉내내지 않으므로 먼저 찾아도 안전하다.
+for PY in py python3 python; do
   command -v "$PY" >/dev/null 2>&1 || continue
   if [ "$PY" = "py" ]; then
     exec py -3 "$DIR/graph.py" "$@"
   fi
+  # python3/python 후보는 가짜 스텁이 아닌지 확인한다: 빈 프로그램을
+  # 돌려서 조용히 성공하면 진짜다. 가짜는 인자와 무관하게 안내 문구를
+  # 찍고 0이 아닌 코드로 끝난다.
+  "$PY" -c "" >/dev/null 2>&1 || continue
   exec "$PY" "$DIR/graph.py" "$@"
 done
 

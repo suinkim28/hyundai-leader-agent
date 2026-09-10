@@ -181,12 +181,31 @@ echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b
 2. 값은 **대화창으로만** 받는다. 입력 창을 띄우는 경로는 두지 않았다.
    본부장이 다뤄야 할 화면을 늘리지 않는 것이 우선이다
 
+### 2026-09-09 반영: PKCE 전환 완료
+
+이 앱은 `http://localhost` 리디렉션을 쓰는 **퍼블릭 클라이언트**로 등록돼
+있다 (Entra 가 이 리디렉션 형식을 "모바일 및 데스크톱 앱" 플랫폼에서만
+허용하기 때문). 그런데 로그인 코드가 여전히 `client_secret` 을 함께
+보내고 있었고, 실제 본부장 PC 에서 첫 로그인 시 `AADSTS700025: Client is
+public` 으로 거부되는 것이 확인됐다.
+
+`get_auth_code_token()` 을 PKCE (code_verifier/code_challenge, RFC 7636) 로
+바꾸고, 인증 코드 교환과 refresh token 갱신 요청에서 `client_secret` 을
+제거했다. `get_device_code_token()` 도 같은 이유로 동일하게 고쳤다.
+`check_connections.py` 의 조용한 진단용 refresh 확인도 같은 문제가 있어
+함께 고쳤다. (2026-09-09 당시 이 함수들은 `scripts/fetch_teams_message.py`
+에 있었으나, 이후 인증/토큰 코드 전체를 `scripts/_graph_common.py` 로
+옮겼다 — TODO.txt "이름이 이상한데" 참고.)
+
+**의미**: 로그인 자체에는 이제 Client Secret 이 전혀 오가지 않는다.
+아래 "Client Secret 재발급" 항목은 여전히 유효하다 — 평문으로 전달된
+값이라는 사실은 바뀌지 않았고, `--flow client_credentials`(앱 전용
+인증)를 쓰게 되면 그때는 시크릿이 다시 필요해진다.
+
 ### PoC 종료 시 할 것
 
 - [ ] **Client Secret 재발급.** 현재 값은 2026-09-03 Teams 메시지로 평문 전달됐고,
       본부장 PC 여러 대에 같은 값이 복제된다. 만료는 2027-09-02
-- [ ] 퍼블릭 클라이언트 + PKCE 전환 검토. 시크릿 배포 자체를 없앤다.
-      현재 `get_auth_code_token` 은 PKCE 가 구현되어 있지 않다
 - [ ] 시크릿이 담긴 Teams 메시지 삭제 요청
 
 ### 발송 계열 권한

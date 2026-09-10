@@ -20,7 +20,18 @@ Azure Portal → Microsoft Entra ID → 앱 등록 → 새 등록
 
 ### 리디렉션 URI: 틀리면 로그인이 실패한다
 
-플랫폼은 **웹(Web)** 을 고른다. 시크릿을 쓰는 기밀 클라이언트이기 때문이다.
+플랫폼은 **모바일 및 데스크톱 앱**(퍼블릭 클라이언트)을 고른다.
+**"웹(Web)"을 고르지 않는다.** Entra 는 `http://localhost` 리디렉션을
+"모바일 및 데스크톱 앱" 플랫폼에서만 허용하고, 그 플랫폼으로 등록된
+앱은 자동으로 퍼블릭 클라이언트가 된다. 로그인은 PKCE(코드 검증자)로
+증명하므로 **클라이언트 시크릿이 로그인 자체에는 쓰이지 않는다.**
+
+> 2026-09-09: 처음에 "웹" 플랫폼 + 시크릿 조합으로 안내했다가 실제
+> 로그인에서 `AADSTS700025: Client is public, client_secret 을 보내면
+> 안 됨` 으로 실패하는 것을 확인했다. Entra 가 이미 이 앱을 퍼블릭
+> 클라이언트로 처리하고 있었기 때문이다. `get_auth_code_token()`
+> (지금은 `scripts/_graph_common.py` 에 있음) 을 PKCE 로 바꿔 해결했다.
+> **새로 앱을 등록할 때는 처음부터 "모바일 및 데스크톱 앱" 플랫폼을 고른다.**
 
 ```
 http://localhost:3000/auth/callback
@@ -87,6 +98,12 @@ export MICROSOFT_GRAPH_REDIRECT_URI="<앱에 등록된 값>"
 
 **생성 직후 `값(Value)` 열을 복사한다.** `비밀 ID` 가 아니다. 값은 페이지를
 벗어나면 다시 볼 수 없다.
+
+**참고: 이 값은 기본 로그인 흐름(auth_code, PKCE)에는 쓰이지 않는다.**
+위 §1 에서 설명했듯 이 앱은 퍼블릭 클라이언트라 로그인 요청에 시크릿을
+보내지 않는다. 그래도 `setup_credentials.py` 가 세 값(Client ID, Tenant
+ID, Client Secret)을 모두 요구하므로 생성은 그대로 하고 저장해 둔다.
+나중에 `--flow client_credentials`(앱 전용 인증)를 쓸 경우에 대비한 것이다.
 
 ---
 
@@ -159,7 +176,8 @@ Atlassian MCP 가 붙어 있으면 `/meeting-prep` 이 Confluence, Jira 까지 �
 | `AADSTS65001` 동의 없음 | 관리자 동의 미클릭 | Entra 에서 `관리자 동의 허용` |
 | `AADSTS70011` invalid_scope | 요청 스코프에 동의 안 된 권한 | `graph_scopes.txt` 를 동의 목록과 맞춘다 |
 | `invalid_client` | 시크릿 오타, 만료, 또는 비밀 ID 를 넣음 | `값(Value)` 열을 다시 복사 |
-| 브라우저가 안 열림 | 콜백 포트 점유 | 그 포트를 쓰는 프로세스를 끈다 |
+| `AADSTS700025` Client is public | 앱이 퍼블릭 클라이언트인데 로그인 요청에 `client_secret` 이 딸려 갔다 | `scripts/_graph_common.py` 가 PKCE 를 쓰는 최신본인지 확인 (2026-09-09 수정, 이후 `fetch_teams_message.py` 에서 이 파일로 이동). 앱을 "웹" 플랫폼으로 새로 등록했다면 §1 대로 "모바일 및 데스크톱 앱"으로 다시 등록 |
+| 브라우저가 안 열림 | 콜백 포트 점유, 또는 `webbrowser.open()` 이 실패 | 터미널에 함께 출력되는 URL 을 직접 열어도 로그인은 그대로 된다. 포트 점유면 그 프로세스를 끈다 |
 
 ---
 
@@ -170,5 +188,7 @@ Atlassian MCP 가 붙어 있으면 `/meeting-prep` 이 Confluence, Jira 까지 �
 - [ ] 발송을 훅이 막는 것 확인
 - [ ] `/morning-brief` 가 실제 데이터로 한 장을 만든다
 - [ ] Windows PC 에서 DPAPI 저장, 재읽기 확인 (macOS 에서는 검증되지 않는 경로다)
+- [ ] 로그인 1회 후 **새 세션에서 재로그인 없이** `bin/graph mail --top 1` 이 되는지 확인
+      (refresh token 이 DPAPI 로 저장돼 있으면 세션이 바뀌어도 유지된다)
 - [ ] `.claude/graph_scopes.txt` 를 현대차 승인 목록으로 되돌린다
       (테스트에서 발송 3종을 뺐다면 다시 넣는다)

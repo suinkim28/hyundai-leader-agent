@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# 무인 루틴 실행 (macOS / Linux)
+# 무인 루틴 실행 (macOS / Linux 참고용. 본부장 PC 는 Windows 이므로 1순위는
+# run_routine.ps1 이다)
 #
 # 사람이 화면 앞에 없는 상태로 돈다. 확인이 필요한 행동은 시도하지 않는다
 # (SECURITY.md §7). 조회하고 파일로 남기는 것까지만 한다.
@@ -10,11 +11,12 @@
 #
 # CLI 경로
 # --------
-# 무인 실행은 래퍼 UI 가 아니라 CLI 를 직접 부른다. H Code Desktop 같은
-# 래퍼가 CLI 를 번들로 갖고 있으면 PATH 에 없을 수 있으므로 다음 순서로
-# 찾는다: $HMG_CLAUDE_BIN → PATH → 흔한 설치 위치.
+# 무인 실행은 VS Code 가 아니라 Claude Code CLI 를 직접 부른다. CLI 는 보통
+# npm 전역 설치라 PATH 에 있지만, 스케줄러(launchd 등)는 사용자 PATH 를
+# 물려받지 않을 수 있으므로 다음 순서로 찾는다:
+# $HMG_CLAUDE_BIN → PATH → 흔한 설치 위치.
 #
-#   export HMG_CLAUDE_BIN="/Applications/H Code Desktop.app/Contents/Resources/claude"
+#   export HMG_CLAUDE_BIN="$(npm config get prefix)/bin/claude"
 #
 # launchd 등록 예 (평일 08:00):
 #   ~/Library/LaunchAgents/com.hmg.agent.morning.plist 에
@@ -46,8 +48,6 @@ CANDIDATES=(
   "$HOME/.local/bin/claude"
   "/usr/local/bin/claude"
   "/opt/homebrew/bin/claude"
-  "/Applications/H Code Desktop.app/Contents/Resources/claude"
-  "/Applications/H Code Desktop.app/Contents/MacOS/claude"
 )
 
 CLAUDE_BIN=""
@@ -64,7 +64,7 @@ if [ -z "$CLAUDE_BIN" ]; then
     echo "[$(date '+%F %T')] Claude Code CLI 를 찾지 못했습니다."
     echo "다음 위치를 확인했습니다:$TRIED"
     echo ""
-    echo "래퍼가 CLI 를 번들로 갖고 있다면 경로를 지정하십시오:"
+    echo "Claude Code CLI 설치 경로를 지정하십시오:"
     echo '  export HMG_CLAUDE_BIN="/경로/claude"'
     echo "자세한 내용은 HARNESS.md §5 참조."
   } | tee -a "$LOGFILE" >&2

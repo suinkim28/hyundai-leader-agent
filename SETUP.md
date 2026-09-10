@@ -14,26 +14,30 @@
 
 | 항목 | 확인 |
 | --- | --- |
-| **본부장 실제 사용 PC** (챔피언 PC 아님) | 여기서 돌지 않으면 의미가 없다 |
-| Python 3.11 이상 | `bin/graph check` (없으면 python.org 에서 설치, Add python.exe to PATH 체크) |
-| **H Code Desktop** | 사내 배포판 |
-| Claude Code CLI (무인 루틴용) | `claude --version` 또는 래퍼 번들 경로 |
+| **본부장 실제 사용 PC** (챔피언 PC 아님), Windows | 여기서 돌지 않으면 의미가 없다 |
+| Python 3.11 이상 | **본부장 PC 에는 기본으로 설치돼 있지 않을 가능성이 높다.** `py --version` 으로 확인. 없으면 `winget install Python.Python.3.12` 또는 python.org 설치본으로 설치하고, 설치 화면의 **Add python.exe to PATH** 를 체크한다. 설치 후 `bin/graph check` 로 재확인 |
+| **VS Code** | 사내 표준 배포판 또는 code.visualstudio.com |
+| **Claude Code 확장** (`anthropic.claude-code`, VS Code 마켓플레이스) | 확장이 내부적으로 Claude Code CLI 를 실행한다 |
+| Claude Code CLI (무인 루틴용) | `npm install -g @anthropic-ai/claude-code` 로 전역 설치되어 있으면 `claude --version` 으로 확인 |
 | 본부장 사내 계정 로그인 상태 | |
+| `pip install truststore` | **사내망(SSL 인스펙션 프록시)에서만 필요.** 안 하면 `bin/graph check` 에서 Outlook 메일, 캘린더, Teams 가 `CERTIFICATE_VERIFY_FAILED` 로 전부 실패한다 (`TODO.txt` 참고). Python 3.10 이상 필요. 프록시가 없는 망이면 안 해도 무방하다 |
 
 ### 0-2. 워크스페이스 배치
 
 이 폴더를 통째로 본부장 PC의 작업 위치에 복사하고 이름을 바꾼다.
 
-```bash
-cp -R agent_skeleton ~/비서
-cd ~/비서
-```
-
-Windows PowerShell:
+Windows PowerShell (1순위):
 
 ```powershell
 Copy-Item -Recurse agent_skeleton "$HOME\비서"
 Set-Location "$HOME\비서"
+```
+
+macOS/Linux (참고):
+
+```bash
+cp -R agent_skeleton ~/비서
+cd ~/비서
 ```
 
 **본부장 한 분당 한 폴더다.** 여러 본부장이 하나를 공유하지 않는다.
@@ -41,12 +45,10 @@ Set-Location "$HOME\비서"
 
 ### 0-3. 워크스페이스 신뢰 (빠뜨리기 쉬움)
 
-복사한 폴더를 **H Code Desktop 에서 한 번 열고 신뢰 확인에 동의한다.**
-래퍼가 자체 신뢰 흐름을 갖고 있으면 그것을 따르고, 없으면 CLI 로 한 번 연다.
-
-```bash
-claude
-```
+복사한 폴더를 **VS Code 로 한 번 열고**(`code .` 또는 탐색기에서 폴더 열기)
+신뢰 확인 대화상자(`Do you trust the authors of the files in this folder?`)에서
+**Trust** 를 누른다. Claude Code 확장이 별도로 한 번 더 신뢰를 물으면 마찬가지로
+동의한다.
 
 이걸 건너뛰면 다음 경고와 함께 `.claude/settings.json` 의 허용 목록이 전부
 무시되고, 조회할 때마다 확인 창이 뜬다.
@@ -62,10 +64,11 @@ this workspace has not been trusted.
 
 ### 0-4. 하네스 자가진단: **가장 중요한 단계**
 
-H Code Desktop 은 Claude Code CLI 를 감싼 래퍼다. 래퍼가 `.claude/settings.json`
-의 훅 등록을 그대로 넘겨주는지는 **밖에서 알 수 없고, 무시되더라도 오류가
-나지 않는다.** 겉보기에는 완전히 정상 동작하면서 메일 발송 확인 창만 안 뜨는
-상태가 될 수 있다.
+VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` 의 훅
+등록은 표준으로 지원된다. 그래도 이 단계를 건너뛰지 않는 이유는 따로 있다:
+**이 컴퓨터에 Python 이 없거나, 워크스페이스를 신뢰하지 않았거나, 프로젝트
+루트가 어긋나면 훅은 오류 없이 조용히 안 돈다.** 겉보기에는 완전히 정상
+동작하면서 메일 발송 확인 창만 안 뜨는 상태가 될 수 있다.
 
 에이전트를 열고 실행한다.
 
@@ -142,9 +145,9 @@ echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b
 
 ### 3-1. 연결 진단 기록
 
-```bash
-mkdir -p logs/<오늘>
-bin/graph check > logs/<오늘>/connections.txt 2>&1
+```powershell
+New-Item -ItemType Directory -Force -Path "logs\<오늘>" | Out-Null
+bin\graph.cmd check > "logs\<오늘>\connections.txt" 2>&1
 ```
 
 결과 요약을 `PROFILE.md` §3 연결 표에 옮긴다.
@@ -187,12 +190,14 @@ bin/graph check > logs/<오늘>/connections.txt 2>&1
 
 - [ ] Quick Win 1건이 **실제 본부장 데이터로** 동작한다
 - [ ] 무인 루틴 등록 (선택)
-      ```bash
-      ./scripts/run_routine.sh morning-brief      # macOS/Linux
-      .\scripts\run_routine.ps1 morning-brief     # Windows
+      ```powershell
+      .\scripts\run_routine.ps1 morning-brief     # Windows (1순위)
       ```
-      정상 동작을 확인한 뒤 작업 스케줄러 / launchd 에 등록한다.
-      등록 예시는 스크립트 상단 주석에 있다.
+      ```bash
+      ./scripts/run_routine.sh morning-brief      # macOS/Linux (참고)
+      ```
+      정상 동작을 확인한 뒤 작업 스케줄러(Windows) / launchd(macOS) 에 등록한다.
+      등록 예시는 스크립트 상단 주석과 `HARNESS.md` §5 에 있다.
 - [ ] 세션에서 보여줄 화면 순서를 정한다. 즉석에서 찾지 않는다.
 
 ---
@@ -228,10 +233,10 @@ bin/graph check > logs/<오늘>/connections.txt 2>&1
 
 주 1회 확인:
 
-```bash
-ls -t briefings/ | head            # 루틴이 실제로 돌고 있는가
-tail -30 PROFILE.md                 # §10 누적 학습 로그가 늘고 있는가
-bin/graph check --quiet
+```powershell
+Get-ChildItem briefings\ | Sort-Object LastWriteTime -Descending | Select-Object -First 10   # 루틴이 실제로 돌고 있는가
+Get-Content PROFILE.md -Tail 30                                                              # §10 누적 학습 로그가 늘고 있는가
+bin\graph.cmd check --quiet
 ```
 
 - 브리핑이 사흘 이상 비어 있다 → 루틴이 안 돌거나 안 읽히고 있다. 물어본다.
@@ -258,13 +263,14 @@ bin/graph check --quiet
 | 증상 | 원인 | 조치 |
 | --- | --- | --- |
 | 세션 시작하자마자 질문만 한다 | 정상. `PROFILE.md` 가 `미완료` 상태 | `/bootstrap` 진행 |
-| 조회할 때마다 확인 창이 뜬다 | 워크스페이스 미신뢰, 또는 `gate_policy.json` 등급이 `paranoid` | 폴더에서 `claude` 를 한 번 실행해 신뢰 동의 (§0-3). 그래도 뜨면 등급을 `standard` 로 |
+| 조회할 때마다 확인 창이 뜬다 | 워크스페이스 미신뢰, 또는 `gate_policy.json` 등급이 `paranoid` | VS Code 신뢰 대화상자에서 Trust 선택 (§0-3). 그래도 뜨면 등급을 `standard` 로 |
 | 메일, 일정이 비어 있다 | Graph 미승인 또는 첫 로그인 전 | `check_connections.py`. 승인 전이면 내보내기 파일 |
 | 첨부를 못 읽는다 | 문서 DRM | `[미확보: DRM]` 로 표시됨. 해제본을 `attachments/raw/` 에 |
 | 답변에 출처가 없다 | 훅이 지적했는데 넘어갔다 | `SYSTEM.md` §3 을 다시 읽히고, 반복되면 `PROFILE.md` §4 에 규칙 추가 |
-| 무인 루틴이 안 돈다 | 래퍼 번들 CLI 가 PATH 에 없다 | `HMG_CLAUDE_BIN` 에 경로 지정 (`HARNESS.md` §5). 로그는 `logs/YYYY-MM-DD/` |
+| 무인 루틴이 안 돈다 | 작업 스케줄러가 사용자 PATH 를 안 물려받아 `claude` 를 못 찾는다 | `HMG_CLAUDE_BIN` 에 경로 지정 (`HARNESS.md` §5). 로그는 `logs/YYYY-MM-DD/` |
+| 훅이 하나도 안 돈다 | **Python 이 이 컴퓨터에 없다** | `py --version` 확인, 없으면 `winget install Python.Python.3.12` |
 | 발송 확인 창이 안 뜬다 | **훅이 죽어 있다** | 즉시 중단. `/selftest` → `HARNESS.md` §3, 필요하면 §6 축소 운영 |
-| `/명령` 이 안 먹힌다 | 래퍼가 `/` 입력을 가로챔 | 평상어로 호출 (`SYSTEM.md` §6 대응표) |
+| `/명령` 이 안 먹힌다 | 명령 파일 인식 지연 (드묾) | 평상어로 호출 (`SYSTEM.md` §6 대응표), VS Code 재시작 |
 | 회의록에 이름이 틀린다 | 용어집 미반영 | `knowledge_base/용어집.txt` 에 고유명사 추가 |
 
 ---

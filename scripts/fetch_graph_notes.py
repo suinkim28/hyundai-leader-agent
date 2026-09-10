@@ -20,8 +20,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _graph_common import FLOWS, graph_get, token_for      # noqa: E402
-from fetch_teams_message import GRAPH_BASE                  # noqa: E402
+from _graph_common import FLOWS, GRAPH_BASE, graph_get, token_for  # noqa: E402
 import urllib.request                                       # noqa: E402
 
 

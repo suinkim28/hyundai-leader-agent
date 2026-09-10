@@ -30,7 +30,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from fetch_teams_message import (
+from _graph_common import (
     ENV_CLIENT_ID,
     ENV_CLIENT_SECRET,
     ENV_TENANT_ID,

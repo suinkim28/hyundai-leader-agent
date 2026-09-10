@@ -11,7 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from fetch_teams_message import (
+from _graph_common import (
     ENV_CLIENT_ID,
     ENV_CLIENT_SECRET,
     ENV_TENANT_ID,

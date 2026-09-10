@@ -111,9 +111,9 @@ def login(argv: list[str]) -> int:
     scopes = ROOT / ".claude" / "graph_scopes.txt"
     n = len([l for l in scopes.read_text(encoding="utf-8").splitlines()
              if l.strip() and not l.startswith("#")]) if scopes.exists() else 0
-    import fetch_teams_message as g
+    import _graph_common as gc
     print(f"자격증명 확인됨. 요청 스코프 {n}종.")
-    print(f"리디렉션 URI: {g.LOCAL_REDIRECT_URI}")
+    print(f"리디렉션 URI: {gc.LOCAL_REDIRECT_URI}")
     print("  Entra 앱 등록의 리디렉션 URI 와 정확히 같아야 합니다.")
     print("  다르면 AADSTS50011 이 뜹니다. 앱을 바꿀 수 없으면 환경변수로 맞춥니다:")
     print('    export MICROSOFT_GRAPH_REDIRECT_URI="<앱에 등록된 값>"')

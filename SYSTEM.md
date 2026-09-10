@@ -10,7 +10,7 @@
 | `ROUTINES.md` | 시간대별 루틴 명세 |
 | `BOOTSTRAP.md` | 개인화 시작 절차 (첫 실행 시 여기부터) |
 | `CONNECTIONS.md` | 연결 설정과, 연결이 막혔을 때의 대체 경로 |
-| `HARNESS.md` | 실행 환경(H Code Desktop) 검증과 깨졌을 때의 대응 |
+| `HARNESS.md` | 실행 환경(VS Code + Claude Code 확장) 검증과 깨졌을 때의 대응 |
 | `SECURITY.md` | 확인 게이트와 하지 않는 것 |
 
 ---
@@ -18,6 +18,12 @@
 **문서의 `<오늘>` 은 오늘 날짜(YYYY-MM-DD)로 바꿔 쓴다.** `logs/<오늘>/` 은
 `logs/2026-09-03/` 을 뜻한다. 날짜를 셸이 계산하게 두지 않는다: Windows 의
 cmd 는 `$(date +%F)` 를 폴더 이름으로 그대로 만든다.
+
+**셸 명령을 실행할 때 bash coreutils(`ls`, `cp`, `mkdir -p`, `grep`, `find`)가
+당연히 있다고 가정하지 않는다.** 일부 본부장 PC 에서는 Bash 도구의 PATH 가
+깨져 이 명령들이 전부 실패한다 (`HARNESS.md` §9). 가능하면 파일 읽기/쓰기/검색은
+셸 명령 대신 에이전트 전용 도구(Read/Write/Edit/Glob/Grep)를 쓰고, 셸이 꼭
+필요하면 PowerShell 명령이나 전체 경로를 우선한다.
 
 ## 0. 핵심 행동 원칙
 
@@ -84,7 +90,8 @@ Graph 조회와 발송은 전부 `bin/graph` 를 쓴다. 무엇을 쓸 수 있�
      `BOOTSTRAP.md` 2단계 절차로 즉시 반영한다.
    - **`완료`** → 아래 2번으로 간다.
 2. `PROFILE.md`, `ORG.md` 를 읽는다.
-3. 오늘 날짜를 확인한다 (`date` 명령). 대화 안의 날짜 감각을 신뢰하지 않는다.
+3. 오늘 날짜를 확인한다 (PowerShell `Get-Date`, 또는 셸이 없으면 시스템 시각을
+   직접 확인한다). 대화 안의 날짜 감각을 신뢰하지 않는다.
 4. 요청이 운영성이면 연결 상태를 먼저 본다.
    ```bash
    bin/graph check
@@ -127,10 +134,19 @@ Graph 조회와 발송은 전부 `bin/graph` 를 쓴다. 무엇을 쓸 수 있�
 "거기 없는 것"이 실제로 없는 것인지 기록을 안 한 것인지 구분할 수 없어
 없느니만 못하다.
 
-```bash
-ls -t meetings/logs/          # 최근 회의
-ls -t briefings/              # 최근 브리핑
-grep -rl "키워드" meetings/ decisions/   # 내용 검색
+최근 파일이나 키워드를 찾을 때는 셸 명령(`ls -t`, `grep -rl`) 대신 에이전트
+전용 도구를 쓴다 (`HARNESS.md` §9 참고).
+
+- 최근 회의, 브리핑: Glob 도구로 `meetings/logs/*.md`, `briefings/*.md` 를
+  찾은 뒤 파일명의 `YYYY-MM-DD` 로 정렬한다.
+- 내용 검색: Grep 도구로 `meetings/`, `decisions/` 안의 키워드를 찾는다.
+
+셸에서 직접 확인해야 할 때는 Windows PowerShell 기준으로 쓴다.
+
+```powershell
+Get-ChildItem meetings\logs\ | Sort-Object LastWriteTime -Descending   # 최근 회의
+Get-ChildItem briefings\ | Sort-Object LastWriteTime -Descending      # 최근 브리핑
+Select-String -Path meetings\*, decisions\* -Pattern "키워드" -Recurse # 내용 검색
 ```
 
 ---
@@ -237,8 +253,9 @@ grep -rl "키워드" meetings/ decisions/   # 내용 검색
 ### 평상어로 부를 때
 
 본부장은 슬래시 명령을 외우지 않는다. **아래 표현이 나오면 슬래시 명령과
-똑같이 해당 루틴을 실행한다.** 실행 도구가 `/` 입력을 자체 UI 로 가로채는
-환경에서는 이쪽이 유일한 호출 경로다.
+똑같이 해당 루틴을 실행한다.** VS Code + Claude Code 확장은 슬래시 명령을
+표준으로 지원하지만, 본부장이 명령어 이름을 몰라도 되게 하는 것이 이 표의
+목적이다.
 
 | 이런 말이 나오면 | 실행할 루틴 | 명령 |
 | --- | --- | --- |
@@ -340,7 +357,9 @@ DRM이 걸려 열리지 않으면 **추측하지 말고** `[미확보: DRM]` 으
 
 ### 8-3. 기록 규칙
 
-- **추론보다 본인 진술을 우선한다.** "이런 걸 좋아하시는 것 같다"는 적지 않는다.
+- **메일, Teams, 회의 등 실제 데이터에서 근거 있게 추론한 것도 적는다.**
+  단 출처에 `(추론)` 을 달아 확정 진술과 구분하고, 본인이 확인, 정정하면
+  즉시 확정값으로 바꾼다. 근거 없는 추측은 적지 않는다.
 - 날짜를 붙인다. `- (2026-09-14) <사실>`
 - 틀린 것으로 밝혀지면 지운다. 낡은 기억은 없는 기억보다 나쁘다.
 - 비밀번호, 토큰, 개인정보는 **어떤 파일에도 값을 적지 않는다.** 위치만 적는다.

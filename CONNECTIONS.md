@@ -15,8 +15,8 @@ Graph 조회와 발송은 전부 `bin/graph` 하나로 부른다. **macOS 와 Wi
 
 | 부르는 곳 | 명령 |
 | --- | --- |
-| 에이전트, Git Bash, 터미널 | `bin/graph mail --unread` |
-| cmd, PowerShell | `bin\graph.cmd mail --unread` |
+| 에이전트, VS Code 통합 터미널(PowerShell 기본), cmd | `bin\graph.cmd mail --unread` |
+| Git Bash, macOS/Linux 터미널 | `bin/graph mail --unread` |
 
 Python 자체가 없으면 무엇도 돌지 않는다. python.org 에서 3.11 이상을 설치하고
 설치 화면의 **Add python.exe to PATH** 를 체크한다. `bin/graph check` 가
@@ -43,8 +43,8 @@ Python 자체가 없으면 무엇도 돌지 않는다. python.org 에서 3.11 �
 
 | 항목 | 내용 |
 | --- | --- |
-| 위치 | 본부장 실제 사용 PC |
-| 하네스 | **H Code Desktop**: Claude Code CLI 를 감싼 사내 데스크탑 앱 |
+| 위치 | 본부장 실제 사용 PC (Windows) |
+| 하네스 | **VS Code + Claude Code 확장**(`anthropic.claude-code`). 무인 루틴은 Claude Code CLI(`claude -p`)를 직접 호출한다 |
 | 초기 세팅 | AX 챔피언 / DEP 가 대행. 본부장이 설치 화면을 볼 일이 없어야 한다 |
 | 모델 | 에이전트에 기본 장착된 Claude 모델 |
 | 저장 | 공유 가능 정보는 Confluence, 민감정보는 개인 PC `.md` |
@@ -53,9 +53,11 @@ Python 자체가 없으면 무엇도 돌지 않는다. python.org 에서 3.11 �
 파일에 있고 도구 호출은 `scripts/` 의 파이썬으로 분리돼 있다. 사내에서 다른
 실행 도구를 표준으로 정하면 파일을 그대로 옮기면 된다.
 
-다만 래퍼 위에서는 훅과 권한 설정이 그대로 존중되는지 **밖에서 알 수 없다.**
-무시되더라도 오류가 나지 않으므로, 배포 후 본부장이 쓰기 전에 `/selftest` 를
-한 번 통과시킨다. 자세한 것은 `HARNESS.md`.
+VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` 의 훅과
+권한 설정이 표준으로 존중된다. 다만 **이 컴퓨터에 Python 이 없거나, 워크스페이스를
+신뢰하지 않았거나, 프로젝트 루트가 어긋나면** 훅은 오류 없이 조용히 안 돈다.
+그래서 배포 후 본부장이 쓰기 전에 `/selftest` 를 한 번 통과시킨다. 자세한 것은
+`HARNESS.md`.
 
 **세션 당일에 설치하지 않는다.** 2시간짜리 세션에서 환경 세팅을 시작하면
 본부장이 볼 것은 진행 표시줄뿐이다.
@@ -97,16 +99,24 @@ Python 자체가 없으면 무엇도 돌지 않는다. python.org 에서 3.11 �
 
 1. 사내 ICT 승인 후 Entra 앱 등록 정보(클라이언트 ID / 테넌트 ID /
    클라이언트 시크릿)를 받는다.
-2. **파일에 적지 말고** OS 자격증명 저장소에 넣는다.
+2. **파일에 적지 말고** OS 자격증명 저장소에 넣는다. 본부장 PC 는 전부
+   Windows 이므로, 값은 대화창으로 받아 에이전트가 `bin/graph setup` 을 통해
+   저장한다(§7 참고). 저장 위치는 `scripts/secret_store.py` 기준으로 다음과 같다.
 
-   macOS:
+   | OS | 저장 위치 |
+   | --- | --- |
+   | **Windows (1순위)** | DPAPI 로 암호화한 `%LOCALAPPDATA%\hmg-agent\secrets\*.dpapi` |
+   | macOS | 로그인 키체인 (`security` 명령) |
+   | 그 외 (Linux 등) | `~/.config/hmg-agent/secrets.json` (권한 0600) |
+
+   macOS 참고(에이전트를 거치지 않고 직접 넣을 때):
    ```bash
    security add-generic-password -U -a "$USER" -s hmg-agent-graph-client-id -w
    security add-generic-password -U -a "$USER" -s hmg-agent-graph-tenant-id -w
    security add-generic-password -U -a "$USER" -s hmg-agent-graph-client-secret -w
    ```
 
-   Windows / Linux: `~/.config/hmg-agent/secrets.json` 에 넣고 파일 권한을
+   Linux 등 그 외 OS 참고: `~/.config/hmg-agent/secrets.json` 에 넣고 파일 권한을
    본인만 읽도록 제한한다.
    ```json
    {
@@ -120,6 +130,17 @@ Python 자체가 없으면 무엇도 돌지 않는다. python.org 에서 3.11 �
    ```bash
    bin/graph mail --top 1
    ```
+
+   `bin/graph login` 이 로그인 URL을 만들고 **브라우저를 직접 띄운다.**
+   회사 계정으로 로그인하고 동의하면 끝난다. 브라우저가 자동으로 안 뜨면
+   터미널에 함께 출력되는 URL을 직접 열어도 된다.
+
+   이 앱은 `http://localhost` 리디렉션을 쓰는 **퍼블릭 클라이언트**로
+   등록돼 있어(§7 참고), 로그인은 PKCE로 증명하고 Client Secret은 이
+   과정에 쓰이지 않는다. 로그인에 성공하면 **refresh token 이 자격증명과
+   같은 저장소(Windows DPAPI, macOS 키체인)에 저장**되어, 이후 세션이나
+   창을 새로 열어도 **다시 로그인할 필요가 없다.** 재로그인이 필요한
+   경우는 refresh token 자체가 만료·폐기됐을 때뿐이다.
 
 ### 확인
 
@@ -176,8 +197,10 @@ claude mcp list          # 연결 상태 확인
 
 ## 5. 음성 전사 (STT)
 
+키는 본부장님이 대화창에 값을 주시면 에이전트가 저장한다(Windows 는 DPAPI,
+macOS 는 키체인. §2 등록 절차와 같은 방식).
+
 ```bash
-security add-generic-password -U -a "$USER" -s hmg-agent-openai-api-key -w
 bin/graph transcribe <오디오> --output meetings/transcripts/...
 ```
 
@@ -244,6 +267,12 @@ Graph 권한 범위에 포함되는지 확인이 필요하다. 문서 보관처�
 요약을 `PROFILE.md` §3 의 연결 표에 옮긴다. 무엇이 언제부터 막혀 있었는지가
 남아야 에스컬레이션이 된다.
 
+```powershell
+New-Item -ItemType Directory -Force -Path "logs\<오늘>" | Out-Null
+bin\graph.cmd check > "logs\<오늘>\connections.txt" 2>&1
+```
+
+macOS/Linux 참고:
 ```bash
 mkdir -p logs/<오늘>
 bin/graph check > logs/<오늘>/connections.txt 2>&1
@@ -262,19 +291,9 @@ bin/graph check > logs/<오늘>/connections.txt 2>&1
 claude mcp add --transport http atlassian https://mcp.atlassian.com/v1/sse
 ```
 
-헬피코드에서는 설정 파일에 다음을 넣는다 (`~/.config/helpycode/helpycode.jsonc`).
-
-```jsonc
-{
-  "mcp": {
-    "atlassian": {
-      "type": "remote",
-      "url": "https://mcp.atlassian.com/v1/sse",
-      "enabled": true
-    }
-  }
-}
-```
+VS Code 통합 터미널에서 실행하든, 확장이 내부적으로 실행하든 결과는 같다.
+Claude Code CLI 의 사용자 설정(`~/.claude.json`)에 등록되므로 워크스페이스를
+옮겨도 따라오지 않는다는 점만 유의한다 (연결은 PC 단위, 기억은 폴더 단위).
 
 ### 본부장님이 하시는 것
 
@@ -332,7 +351,13 @@ bin/graph check
 | --- | --- |
 | 기본값 | `http://localhost:3000/auth/callback` |
 | 근거 | 현대자동차 ICT 가 `HMG-LeaderAXSession-PILOT` 앱에 등록한 값 |
-| 코드 위치 | `scripts/fetch_teams_message.py` 의 `LOCAL_REDIRECT_URI` |
+| 코드 위치 | `scripts/_graph_common.py` 의 `LOCAL_REDIRECT_URI` |
+| 앱 등록 플랫폼 | **모바일 및 데스크톱 앱** (퍼블릭 클라이언트). "웹" 플랫폼이 아니다 — `http://localhost` 는 이 플랫폼에서만 허용된다 (`TESTING.md` §1) |
+
+이 플랫폼이라 로그인은 **PKCE** 로 증명하고 Client Secret 을 요청에
+넣지 않는다. 새로 앱을 등록할 일이 있으면(다른 조직, 다른 테넌트)
+처음부터 이 플랫폼으로 만든다. "웹"으로 등록하면 로그인 시
+`AADSTS700025` 로 실패한다.
 
 현재 무엇이 쓰이는지는 다음으로 확인합니다.
 
@@ -343,8 +368,8 @@ bin/graph login --check
 다른 앱을 쓰거나 앱에 이미 다른 값이 등록되어 있으면 **코드를 고치지 말고
 환경변수로 맞춥니다.**
 
-```
-export MICROSOFT_GRAPH_REDIRECT_URI="http://localhost:8765/callback"
+```powershell
+$env:MICROSOFT_GRAPH_REDIRECT_URI = "http://localhost:8765/callback"
 ```
 
 포트는 URI 에서 자동으로 읽어 콜백 서버가 그 포트에서 듣습니다.

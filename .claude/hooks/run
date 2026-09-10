@@ -13,11 +13,22 @@ DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 SCRIPT="$DIR/$1"
 shift
 
-for PY in python3 py python; do
+# 한국어 Windows 는 콘솔 코드페이지가 cp949 라 Python 기본 출력 인코딩과
+# 어긋나 훅 메시지의 한글이 깨진다. PYTHONUTF8=1 로 항상 UTF-8 출력을 강제한다.
+export PYTHONUTF8=1
+
+# 순서 주의: py 를 가장 먼저 찾는다. Windows 10/11 은 실제 Python 이
+# 없어도 python.exe/python3.exe 가짜 "App Execution Alias" 를 PATH 에
+# 기본으로 깔아 두고, python.org/winget 설치본은 python3 라는 이름을
+# 만들지 않는다. python3 를 먼저 찾으면 늘 이 가짜만 잡혀 훅이 죽은
+# 것처럼 보인다 (2026-09-09 실제로 겪음). bin/graph 와 같은 순서로 맞춘다.
+for PY in py python3 python; do
   command -v "$PY" >/dev/null 2>&1 || continue
   if [ "$PY" = "py" ]; then
     exec py -3 "$SCRIPT" "$@"
   fi
+  # python3/python 후보가 가짜 스텁이 아닌지 확인한다 (bin/graph 참고).
+  "$PY" -c "" >/dev/null 2>&1 || continue
   exec "$PY" "$SCRIPT" "$@"
 done
 

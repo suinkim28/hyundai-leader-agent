@@ -11,7 +11,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from fetch_teams_message import (
+from _graph_common import (
     ENV_CLIENT_ID,
     ENV_CLIENT_SECRET,
     ENV_TENANT_ID,
@@ -25,8 +25,8 @@ from fetch_teams_message import (
     get_device_code_token,
     get_secret,
     load_dotenv,
-    parse_teams_message_url,
 )
+from fetch_teams_message import parse_teams_message_url
 
 
 def http_post_json(url: str, token: str, data: dict) -> dict:
