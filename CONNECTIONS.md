@@ -108,7 +108,6 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
    | --- | --- |
    | **Windows (1순위)** | DPAPI 로 암호화한 `%LOCALAPPDATA%\hmg-agent\secrets\*.dpapi` |
    | macOS | 로그인 키체인 (`security` 명령) |
-   | 그 외 (Linux 등) | `~/.config/hmg-agent/secrets.json` (권한 0600) |
 
    macOS 참고(에이전트를 거치지 않고 직접 넣을 때):
    ```bash
@@ -117,15 +116,8 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
    security add-generic-password -U -a "$USER" -s hmg-agent-graph-client-secret -w
    ```
 
-   Linux 등 그 외 OS 참고: `~/.config/hmg-agent/secrets.json` 에 넣고 파일 권한을
-   본인만 읽도록 제한한다.
-   ```json
-   {
-     "hmg-agent-graph-client-id": "...",
-     "hmg-agent-graph-tenant-id": "...",
-     "hmg-agent-graph-client-secret": "..."
-   }
-   ```
+   macOS 도 Windows 도 아닌 환경에는 저장소가 없다. 저장하지 않고 실패하므로
+   값을 환경변수(`MICROSOFT_GRAPH_CLIENT_ID` 등)로 준다.
 
 3. 첫 로그인을 한 번 수행한다. 이후 refresh token 이 자동 갱신된다.
    ```bash

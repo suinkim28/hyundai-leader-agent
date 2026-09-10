@@ -10,22 +10,21 @@
 2. OS 보안 저장소
      macOS   : 키체인
      Windows : DPAPI 로 암호화한 %LOCALAPPDATA%\\hmg-agent\\secrets
-     그 외   : ~/.config/hmg-agent/secrets.json (권한 0600)
 
 환경변수에 자리표시자가 들어 있으면 없는 것으로 본다.
+
+**평문 파일에는 쓰지 않는다.** 위 둘이 아닌 환경에서는 저장하지 않고
+실패한다. 그때는 값을 환경변수로 준다.
 
 저장은 에이전트에게 "Graph 설정해줘" 라고 말하면 된다.
 """
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import sys
 from pathlib import Path
-
-FALLBACK_FILE = Path.home() / ".config" / "hmg-agent" / "secrets.json"
 
 # 템플릿에 남은 자리표시자는 값이 없는 것으로 본다.
 _PLACEHOLDER_PREFIXES = ("your", "<", "$", "changeme", "change-me",
@@ -55,12 +54,25 @@ def _powershell(script: str) -> subprocess.CompletedProcess:
     )
 
 
+def _env_name_for(service: str) -> str:
+    """저장소 이름에 대응하는 환경변수 이름. 이 파일 아래의 대응표에서 찾는다.
+
+    이름 규칙이 서로 달라(`hmg-agent-graph-client-id` ->
+    `MICROSOFT_GRAPH_CLIENT_ID`) 문자열 변환으로 만들 수 없다.
+    """
+    for value in globals().values():
+        if (isinstance(value, tuple) and len(value) == 2
+                and value[1] == service and isinstance(value[0], str)):
+            return value[0]
+    return ""
+
+
 def keychain_get(service: str) -> str:
     """저장소에서 값 하나를 읽는다. 없으면 "".
 
     macOS  : 로그인 키체인 (generic password)
     Windows: DPAPI 로 사용자 계정에 묶어 암호화한 파일
-    그 외  : ~/.config/hmg-agent/secrets.json
+    그 외  : 없음. 환경변수로만 받는다 (`get_secret` 이 먼저 본다)
     """
     if sys.platform == "darwin":
         result = subprocess.run(
@@ -82,15 +94,6 @@ def keychain_get(service: str) -> str:
             )
             if proc.returncode == 0:
                 return proc.stdout.strip()
-
-    if FALLBACK_FILE.exists():
-        try:
-            data = json.loads(FALLBACK_FILE.read_text(encoding="utf-8"))
-            value = data.get(service, "")
-            if isinstance(value, str):
-                return value.strip()
-        except (json.JSONDecodeError, OSError):
-            pass
 
     return ""
 
@@ -128,17 +131,16 @@ def keychain_set(service: str, value: str) -> str:
             raise RuntimeError(f"Windows DPAPI 저장 실패: {proc.stderr.strip()}")
         return f"Windows 자격 저장소 (DPAPI, {path.parent})"
 
-    FALLBACK_FILE.parent.mkdir(parents=True, exist_ok=True)
-    data = {}
-    if FALLBACK_FILE.exists():
-        try:
-            data = json.loads(FALLBACK_FILE.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            data = {}
-    data[service] = value
-    FALLBACK_FILE.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.chmod(FALLBACK_FILE, 0o600)
-    return f"파일 ({FALLBACK_FILE})"
+    # 여기까지 왔으면 macOS 도 Windows 도 아니다. 평문 파일에 쓰지 않는다.
+    # 조용히 어딘가에 저장한 척하는 것이 가장 나쁘다: 본부장은 저장됐다고
+    # 믿고, 값은 암호화 없이 디스크에 남는다.
+    env_name = _env_name_for(service)
+    hint = f"export {env_name}=..." if env_name else "해당 환경변수를 설정"
+    raise RuntimeError(
+        f"이 플랫폼({sys.platform})에는 쓸 수 있는 보안 저장소가 없습니다.\n"
+        f"  평문 파일에는 저장하지 않습니다.\n"
+        f"  값을 환경변수로 주십시오: {hint}"
+    )
 
 
 def mask(value: str) -> str:

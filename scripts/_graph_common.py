@@ -211,8 +211,8 @@ def update_dotenv_value(key: str, value: str) -> None:
 def keychain_get(service: str) -> str:
     """자격증명 저장소에서 값 하나를 읽는다.
 
-    실제 구현은 `secret_store` 에 있다. macOS 키체인, Windows DPAPI,
-    그 외 플랫폼의 파일 폴백을 한곳에서 관리하기 위해 위임한다.
+    실제 구현은 `secret_store` 에 있다. macOS 키체인과 Windows DPAPI 를
+    한곳에서 관리하기 위해 위임한다.
     """
     try:
         from secret_store import keychain_get as _get
@@ -231,11 +231,10 @@ def keychain_get(service: str) -> str:
 def keychain_set(service: str, value: str) -> None:
     """저장소에 값 하나를 쓴다.
 
-    실제 구현은 `secret_store` 에 위임한다: macOS 키체인, Windows DPAPI,
-    그 외 플랫폼은 `~/.config/hmg-agent/secrets.json` (권한 0600).
+    실제 구현은 `secret_store` 에 위임한다: macOS 키체인, Windows DPAPI.
     읽기(`keychain_get`)와 쓰기가 같은 곳을 보도록 한곳에서 관리한다.
-    **평문 파일에 쓰지 않는다.** Windows 에서 refresh token 이 DPAPI 암호화
-    없이 남으면 그 PC 를 쓰는 누구나 본부장 계정으로 Graph 를 호출할 수 있다.
+    **평문 파일에 쓰지 않는다.** 암호화 없이 남은 refresh token 은 그 PC 를
+    쓰는 누구나 본부장 계정으로 Graph 를 호출하게 만든다.
     """
     from secret_store import keychain_set as _set
     _set(service, value)

@@ -164,7 +164,8 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"~/canary.md"}}' \
 | --- | --- |
 | macOS | 로그인 키체인 (`security` 명령) |
 | Windows | DPAPI 암호화 파일: 사용자 계정에 묶인다 |
-| 그 외 | `~/.config/hmg-agent/secrets.json` (권한 600) |
+
+**이 둘뿐이다.** 다른 환경에서는 저장하지 않고 실패한다. 평문 파일에 쓰지 않는다.
 
 **워크스페이스 파일에는 쓰지 않는다.** `.env` 를 만들지 않고, `protect_secrets.py`
 훅이 시크릿 패턴이 담긴 쓰기를 차단한다.
