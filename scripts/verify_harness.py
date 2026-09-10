@@ -53,11 +53,6 @@ HOOKS = {
         "첫 실행 시 부트스트랩으로 유도하지 못한다. 백지 상태로 일반론을 답하게 된다",
         "새 세션을 한 번 시작한다",
     ),
-    "guard_external_actions": (
-        "발송, 변경, 삭제 직전 확인",
-        "**메일이 확인 없이 나간다.** 가장 치명적",
-        "bin/graph verify --canary 참조",
-    ),
     "protect_secrets": (
         "자격증명 파일 보호",
         ".env 류 파일이 덮어써질 수 있다",
@@ -120,15 +115,17 @@ def check_files():
 
 
 def check_python_runs_hooks():
-    """훅을 직접 실행해 본다. 파이썬 경로 문제를 여기서 잡는다."""
-    probe = HOOK_DIR / "guard_external_actions.py"
+    """훅을 직접 실행해 본다. 파이썬 경로 문제를 여기서 잡는다.
+
+    카나리아는 keep_memory_portable 로 친다. 워크스페이스 밖 쓰기는 반드시
+    deny 가 나와야 하므로, 훅이 아예 안 도는 것과 구분된다.
+    """
+    probe = HOOK_DIR / "keep_memory_portable.py"
     if not probe.exists():
-        return Result("훅 단독 실행", FAIL, "guard_external_actions.py 없음")
+        return Result("훅 단독 실행", FAIL, "keep_memory_portable.py 없음")
     payload = json.dumps({
-        "tool_name": "Bash",
-        "tool_input": {"command":
-                       "python3 scripts/reply_outlook_mail.py "
-                       "--to selftest@example.com --message \"카나리아\""},
+        "tool_name": "Write",
+        "tool_input": {"file_path": str(Path.home() / "selftest_canary.md")},
     })
     try:
         proc = subprocess.run([sys.executable, str(probe)], input=payload,
@@ -137,12 +134,12 @@ def check_python_runs_hooks():
         return Result("훅 단독 실행", FAIL, f"실행 실패: {type(exc).__name__}",
                       lost="안전장치 전부",
                       fix="python3 이 PATH 에 있는지 확인")
-    if '"permissionDecision": "ask"' in proc.stdout:
-        return Result("훅 단독 실행", OK, "메일 발송 카나리아에 ask 반환")
+    if '"permissionDecision": "deny"' in proc.stdout:
+        return Result("훅 단독 실행", OK, "워크스페이스 밖 쓰기 카나리아에 deny 반환")
     return Result("훅 단독 실행", FAIL,
-                  f"ask 가 나오지 않음 (출력 {len(proc.stdout)}자)",
-                  lost="발송 확인 게이트",
-                  fix="guard_external_actions.py 를 직접 실행해 오류 확인")
+                  f"deny 가 나오지 않음 (출력 {len(proc.stdout)}자)",
+                  lost="파일 쓰기 안전장치",
+                  fix="keep_memory_portable.py 를 직접 실행해 오류 확인")
 
 
 def check_workspace_root():

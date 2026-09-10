@@ -93,8 +93,9 @@ CLI: $ClaudeBin
 ====================================================
 "@
 
-# --permission-mode acceptEdits: 파일 저장은 통과시키되, 발송, 변경은
-# guard_external_actions.py 훅이 여전히 잡는다.
+# --permission-mode acceptEdits: 파일 저장을 통과시킨다.
+# 주의: 발송 확인 게이트는 2026-09-10 에 제거했다. 무인 실행 중 루틴이
+# 발송을 부르면 아무도 보지 않는 시각에 그대로 나간다 (HARNESS.md 6절).
 & $ClaudeBin -p "/$Routine" --permission-mode acceptEdits 2>&1 |
     Out-File -FilePath $LogFile -Append -Encoding UTF8
 $Status = $LASTEXITCODE

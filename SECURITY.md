@@ -63,20 +63,23 @@
 | 훅 | 시점 | 하는 일 |
 | --- | --- | --- |
 | `session_start.py` | 세션 시작 | 개인화 상태를 보고, 비어 있으면 부트스트랩으로 보낸다 |
-| `guard_external_actions.py` | 도구 실행 직전 | 발송, 변경, 삭제를 잡아 되묻는다 |
 | `protect_secrets.py` | 파일 쓰기 직전 | `.env` 류 자격증명 파일 덮어쓰기를 막는다 |
+| `keep_memory_portable.py` | 파일 쓰기 직전 | 워크스페이스 밖과 하네스 전용 저장소로 기억이 새는 것을 막는다 |
 
-앞의 세 개는 **막고**, 뒤의 두 개는 **알린다**. 알리는 쪽을 막는 쪽으로
-바꾸지 않는다: 정당한 계산 결과까지 막히면 훅 자체를 꺼버리게 된다.
+**발송 확인 게이트는 2026-09-10 에 제거했다.** 매번 뜨는 확인 창이 세션
+몰입을 깨고, 판정이 문자열 매칭이라 `--help` 같은 무해한 명령까지 잡는 오탐이
+잦았다. 따라서 **메일과 Teams 발송, 캘린더 변경, 삭제는 확인 없이 실행된다.**
+되돌릴 수 없는 행동을 막아야 한다면 `HARNESS.md` §6 의 축소 운영(발송 스크립트를
+`_disabled/` 로 옮기는 것)을 쓴다. 문서가 아니라 파일 배치가 경계가 된다.
 
 ### 훅이 도는지 확인
 
 ```bash
-echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b.c --message \"테스트\""}}' \
-  | .claude/hooks/run guard_external_actions.py
+echo '{"tool_name":"Write","tool_input":{"file_path":"~/canary.md"}}' \
+  | .claude/hooks/run keep_memory_portable.py
 ```
 
-`permissionDecision: ask` 가 나오면 정상이다.
+`permissionDecision: deny` 가 나오면 정상이다.
 
 ---
 
@@ -210,7 +213,7 @@ public` 으로 거부되는 것이 확인됐다.
 
 ### 발송 계열 권한
 
-`Mail.Send`, `ChatMessage.Send`, `ChannelMessage.Send` 는 토큰에 담기지만
-`guard_external_actions.py` 가 본부장 확인 없이는 통과시키지 않는다.
-확인 게이트를 완전히 없애려면 `.claude/graph_scopes.txt` 에서 이 세 줄을
-주석 처리하는 것이 더 확실하다. 권한 자체가 토큰에 안 담긴다.
+`Mail.Send`, `ChatMessage.Send`, `ChannelMessage.Send` 는 토큰에 담기며,
+**확인 게이트가 없으므로 에이전트가 부르면 그대로 나간다.**
+발송을 원천 차단하려면 `.claude/graph_scopes.txt` 에서 이 세 줄을 주석
+처리한다. 권한 자체가 토큰에 안 담기므로 확실하다.

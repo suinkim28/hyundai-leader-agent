@@ -331,6 +331,11 @@ Select-String -Path meetings\*, decisions\* -Pattern "키워드" -Recurse # 내�
 | `~/.config/` 나 홈 디렉터리 아래의 상태 파일 | 폴더를 옮기면 사라진다 |
 | 세션 요약, 대화 이력에 의존해 "기억하고 있다"고 말하는 것 | 세션이 끝나면 없다 |
 
+Claude Code 의 auto memory 는 `~/.claude/projects/<프로젝트>/memory/` 에 쌓이므로
+폴더를 옮기면 따라오지 않는다. 그래서 `.claude/settings.json` 에서
+`autoMemoryEnabled: false` 로 꺼 두었다. 그래도 그쪽으로 쓰려는 시도가 오면
+`keep_memory_portable.py` 훅이 막으면서 아래 8-2 의 어느 파일로 가야 하는지 알려준다.
+
 **이유는 이식성이다.** 이 워크스페이스는 Claude Code, 헬피코드, 그 밖의 어떤
 에이전트에서도 같은 결과를 내야 한다. 하네스가 바뀌거나 회사가 도구를 교체해도
 본부장의 기억은 그대로 따라가야 한다. 하네스 전용 저장소에 무언가를 남기는 순간

@@ -292,27 +292,18 @@ def check_personalization():
     return Check("개인화 상태", OK, f"{state}, 미확보 항목 {unknown}개")
 
 
-def check_gate_policy():
-    path = ROOT / ".claude" / "gate_policy.json"
-    if not path.exists():
-        return Check("확인 게이트", WARN, "gate_policy.json 없음, standard 로 동작")
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return Check("확인 게이트", WARN, "gate_policy.json 을 읽을 수 없음")
-    level = data.get("등급", "standard")
-    owner = data.get("본부장", "미설정")
-    if owner == "미설정":
-        return Check("확인 게이트", WARN, f"등급 {level} / 본부장 미설정",
-                     lost="", fallback="gate_policy.json 의 본부장, 등급을 설문 응답대로 설정")
-    if level == "paranoid":
-        return Check("확인 게이트", WARN,
-                     f"{owner} / paranoid: 조회까지 매번 확인합니다",
-                     lost="사용성", fallback="1회차에서 '실행'의 범위를 재확인할 것")
-    return Check("확인 게이트", OK, f"{owner} / {level}")
+def check_send_gate():
+    """발송 확인 게이트는 2026-09-10 에 제거됐다. 그 사실을 화면에 남긴다.
 
+    없는 안전장치를 있다고 믿는 상태가 없는 것보다 나쁘다. 진단이
+    조용하면 본부장은 여전히 확인 창이 뜬다고 생각한다.
+    """
+    return Check(
+        "발송 확인 게이트", WARN, "없음 (2026-09-10 제거)",
+        lost="메일, Teams 발송과 캘린더 변경이 확인 없이 실행됩니다",
+        fallback="막아야 하면 HARNESS.md 6절 축소 운영, 또는 .claude/graph_scopes.txt 의 Send 권한 3줄을 주석 처리",
+    )
 
-# --------------------------------------------------------------------------
 
 def run_all():
     checks = [check_python(), check_claude_cli(), check_workspace()]
@@ -332,7 +323,7 @@ def run_all():
     checks.append(check_stt())
     checks.append(check_web())
     checks.append(check_personalization())
-    checks.append(check_gate_policy())
+    checks.append(check_send_gate())
     return checks
 
 

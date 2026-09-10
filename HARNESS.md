@@ -79,7 +79,7 @@ Python 경로나 프로젝트 루트 설정에 구체적인 문제가 있다는 
 | `프로젝트 루트` 불일치 | 이 폴더가 아니라 상위/다른 폴더를 열었다 (멀티루트 워크스페이스 포함) | VS Code 에서 `파일 → 폴더 열기` 로 이 폴더 자체를 단일 루트로 다시 연다 |
 | 조회마다 확인 창 | 워크스페이스 미신뢰 | §4 |
 | `session_start` 만 안 됨 | 세션이 아직 한 번도 열리지 않았다 | 새 대화창을 한 번 시작한 뒤 재확인 |
-| `guard_external_actions` 안 됨 | Python 미설치, 또는 `.claude/hooks/run` 실행 권한 문제 | `.claude/hooks/run guard_external_actions.py` 를 직접 호출해 오류 메시지 확인 |
+| `keep_memory_portable` 안 됨 | Python 미설치, 또는 `.claude/hooks/run` 실행 권한 문제 | `.claude/hooks/run keep_memory_portable.py` 를 직접 호출해 오류 메시지 확인 |
 | `protect_secrets` 안 됨 | 위와 동일 | 위와 동일. **가장 심각하므로** 원인을 못 찾으면 §6 축소 운영으로 전환 |
 | `/morning-brief` 가 안 먹힘 | 명령 파일 인식 지연 (드물게 발생) | 평상어로 호출한다 (§7). VS Code 재시작으로도 대개 해결된다 |
 | 무인 루틴이 안 돎 | `claude` 가 작업 스케줄러의 PATH 에 없음 | §5 |
@@ -154,8 +154,8 @@ export HMG_CLAUDE_BIN="$(npm config get prefix)/bin/claude"
 
 ## 6. 훅이 죽었을 때의 축소 운영
 
-`guard_external_actions` 가 동작하지 않는 것이 확인되면(대개 Python 미설치가
-원인), 안전장치를 **문서가 아니라 파일 배치로** 만든다.
+발송 확인 게이트는 2026-09-10 에 제거했다. 되돌릴 수 없는 발송을 막아야
+하는 본부장이라면, 안전장치를 **문서가 아니라 파일 배치로** 만든다.
 
 ```powershell
 New-Item -ItemType Directory -Force -Path _disabled | Out-Null

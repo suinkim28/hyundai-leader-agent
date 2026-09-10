@@ -101,11 +101,11 @@ bin/graph check
 ### 0-6. 훅 단독 실행 확인
 
 ```bash
-echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b.c --message \"테스트\""}}' \
-  | .claude/hooks/run guard_external_actions.py
+echo '{"tool_name":"Write","tool_input":{"file_path":"~/canary.md"}}' \
+  | .claude/hooks/run keep_memory_portable.py
 ```
 
-`permissionDecision: ask` 가 나오면 정상이다. 아무것도 안 나오면 훅이 동작하지
+`permissionDecision: deny` 가 나오면 정상이다. 아무것도 안 나오면 훅이 동작하지
 않는 것이므로 Python 경로를 확인한다.
 
 ### 0-7. 게이트 등급 설정

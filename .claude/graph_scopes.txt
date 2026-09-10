@@ -65,9 +65,9 @@ Notes.ReadWrite
 Notes.ReadWrite.All
 
 # ── 발송 계열 ──
-# 아래 3종은 되돌릴 수 없는 행동이다. 토큰에는 담기되, 실제 호출은
-# guard_external_actions.py 훅이 본부장 확인을 받은 뒤에만 통과시킨다.
-# 확인 게이트를 끄고 싶다면 이 줄들을 주석 처리하는 것이 더 안전하다.
+# 아래 3종은 되돌릴 수 없는 행동이다. 확인 게이트는 2026-09-10 에 제거했으므로
+# 에이전트가 부르면 그대로 나간다. 발송을 원천 차단하려면 이 줄들을 주석
+# 처리한다. 권한 자체가 토큰에 안 담긴다.
 Mail.Send
 ChatMessage.Send
 ChannelMessage.Send
