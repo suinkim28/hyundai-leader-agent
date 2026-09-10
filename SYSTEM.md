@@ -191,7 +191,13 @@ Select-String -Path meetings\*, decisions\* -Pattern "키워드" -Recurse # 내�
 | 일정 | Outlook | 두지 않음 | `scripts/fetch_outlook_calendar.py --date YYYY-MM-DD` |
 | Confluence / Jira | Atlassian | 두지 않음 | Atlassian MCP |
 | Teams | Teams | 두지 않음 | `scripts/fetch_teams_message.py <url>` |
-| 문서 | SharePoint / OneDrive | 두지 않음 | `CONNECTIONS.md` 참조 |
+| 문서 (PPT, Word) | SharePoint / OneDrive | **내려받은 것은 `attachments/raw/` 에 둔다** | `bin/graph files get` (기본 저장 위치가 여기다) |
+
+문서만 예외다. 분석하려면 어차피 내려받아야 하고, 다시 물으실 때 다시 받는
+비용이 크다. 분석 후에도 `attachments/raw/` 에 그대로 둔다. 파일명이 원본
+이름 그대로라 같은 문서를 다시 받으면 같은 자리에 덮어써진다. 다만 **정본은
+여전히 SharePoint 다**: 사본으로 판단할 때는 받은 날짜를 출처에 함께 적고
+(`[출처: <파일명> p.7, 2026-09-14 수신]`), 갱신됐을 수 있으면 다시 받는다.
 
 **남기는 것은 원본이 아니라 판단이다.** 메일 본문을 복사하는 대신 그 메일로
 무엇을 결정했는지를 `decisions/` 에 남긴다. 회의 결론은 `meetings/logs/` 로,

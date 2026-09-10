@@ -185,3 +185,6 @@ bin/graph reply-mail <id> --message "테스트" --dry-run
   (`SYSTEM.md` §8-2-1, `~/Secretary` 의 운영 방식을 그대로 옮김). 그 전에는
   루틴 밖 분석 결과가 화면 답변으로 끝나 사라졌다. 산출물 폴더
   (`meetings/`, `decisions/`, `drafts/`, `projects/`)를 `.gitignore` 에 추가했다.
+- **내려받은 문서 보관**: `attachments/raw/` 의 PPT/Word 는 분석 후에도 둔다.
+  재분석 비용이 크고 파일명이 원본 이름이라 중복 없이 덮어써진다. 정본은
+  SharePoint 이므로 출처에 수신 날짜를 함께 적는다 (`SYSTEM.md` §4).
