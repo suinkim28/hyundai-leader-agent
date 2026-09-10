@@ -133,7 +133,6 @@ echo '{"tool_name":"Bash","tool_input":{"command":"bin/graph reply-mail --to a@b
 ## 2. D-5: 남은 결정
 
 - [ ] STT 사용 승인 회신: 막히면 회의 관련 워크플로 2종이 사라진다
-- [ ] 문서 DRM 일시 해제 회신: 막히면 보고자료를 아예 못 읽는다
 - [ ] 녹음 가능한 회의 범위 확정 → `ORG.md` §5 에 목록화
 
 **미결이면 해당 워크플로를 세션 범위에서 빼고 본부장께 사전 고지한다.**
@@ -265,7 +264,6 @@ bin\graph.cmd check --quiet
 | 세션 시작하자마자 질문만 한다 | 정상. `PROFILE.md` 가 `미완료` 상태 | `/bootstrap` 진행 |
 | 조회할 때마다 확인 창이 뜬다 | 워크스페이스 미신뢰, 또는 `gate_policy.json` 등급이 `paranoid` | VS Code 신뢰 대화상자에서 Trust 선택 (§0-3). 그래도 뜨면 등급을 `standard` 로 |
 | 메일, 일정이 비어 있다 | Graph 미승인 또는 첫 로그인 전 | `check_connections.py`. 승인 전이면 내보내기 파일 |
-| 첨부를 못 읽는다 | 문서 DRM | `[미확보: DRM]` 로 표시됨. 해제본을 `attachments/raw/` 에 |
 | 답변에 출처가 없다 | 훅이 지적했는데 넘어갔다 | `SYSTEM.md` §3 을 다시 읽히고, 반복되면 `PROFILE.md` §4 에 규칙 추가 |
 | 무인 루틴이 안 돈다 | 작업 스케줄러가 사용자 PATH 를 안 물려받아 `claude` 를 못 찾는다 | `HMG_CLAUDE_BIN` 에 경로 지정 (`HARNESS.md` §5). 로그는 `logs/YYYY-MM-DD/` |
 | 훅이 하나도 안 돈다 | **Python 이 이 컴퓨터에 없다** | `py --version` 확인, 없으면 `winget install Python.Python.3.12` |

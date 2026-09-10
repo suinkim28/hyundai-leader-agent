@@ -307,8 +307,8 @@ Select-String -Path meetings\*, decisions\* -Pattern "키워드" -Recurse # 내�
 → 5. 본부장 개인 선호가 드러난 대목은 `PROFILE.md` 에 반영.
 
 **첨부 처리**: 원본은 `attachments/raw/`, 추출 본문은 `attachments/extracted/`.
-DRM이 걸려 열리지 않으면 **추측하지 말고** `[미확보: DRM]` 으로 표시하고
-`CONNECTIONS.md` 의 대체 경로를 안내한다.
+열리지 않으면 **추측하지 말고** `[미확보: <사유>]` 로 표시하고 무엇이 왜
+안 읽혔는지 함께 말한다.
 
 ---
 
@@ -392,7 +392,6 @@ DRM이 걸려 열리지 않으면 **추측하지 말고** `[미확보: DRM]` 으
 | --- | --- | --- |
 | Microsoft Graph (메일, 일정) | 아침 브리핑, 메일 트리아지 | 본부장이 내보낸 `.msg`/`.ics` 를 `attachments/raw/` 에 두면 읽는다 |
 | Confluence / Jira MCP | 과제 추적, 사내 지식 검색 | 웹에서 복사해 붙여넣은 내용을 `knowledge_base/` 에 저장 |
-| 문서 DRM | 첨부 보고자료 분석 | 본부장이 화면에 띄운 내용을 구술하거나, DRM 해제본을 `attachments/raw/` 에 |
 | STT (음성 전사) | 회의록 자동 생성 | 회의 중 구술 메모 → 회의 직후 요약. 원문은 포기 |
 | 외부 웹 | 시장 동향, 법규 조사 | 사내에서 받는 뉴스 클리핑을 `knowledge_base/` 에 축적 |
 

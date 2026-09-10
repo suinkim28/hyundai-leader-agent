@@ -70,7 +70,6 @@
 | Teams | [미확보] | |
 | Confluence / Jira | [미확보] | |
 | SharePoint / OneDrive | [미확보] | |
-| 문서 DRM 해제 | [미확보] | |
 | 음성 전사 (STT) | [미확보] | |
 | 외부 웹 | [미확보] | |
 
