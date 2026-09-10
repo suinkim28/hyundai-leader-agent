@@ -17,9 +17,9 @@
 
 | 구분 | 내용 | 파일 |
 | --- | --- | --- |
-| **규칙** | 출처 표기, 소스 우선순위, 확인 게이트, 기억 갱신 절차 | `SYSTEM.md` |
+| **규칙** | 출처 표기, 소스 우선순위, 되돌릴 수 없는 행동의 확인 원칙, 기억 갱신 절차 | `SYSTEM.md` |
 | **루틴** | 06:00 시장 브리핑부터 17:00 회고까지 8종 | `ROUTINES.md`, `.claude/commands/` |
-| **안전장치** | 발송 및 변경 직전 재확인, 자격증명 보호, 출처 누락 감지 | `.claude/hooks/` |
+| **안전장치** | 자격증명 보호, 기억이 이 폴더 밖으로 새는 것 차단 | `.claude/hooks/` |
 
 비어 있는 것은 **본부장 개인 정보 하나**입니다. 이를 채우는 절차는
 `BOOTSTRAP.md`에 정의되어 있으며, 첫 실행 시 에이전트가 자동으로 시작합니다.
@@ -80,8 +80,7 @@
 | 회의 후 | 녹음 전사 원문 저장, 요약, 실행사항 도출 | `meetings/transcripts/`, `meetings/logs/` |
 | 17:00 | 회고, 리더십 관찰, **장기기억 갱신** | `briefings/..._회고.md` |
 
-06:00, 08:00, 17:00 루틴은 무인 실행이 가능합니다
-(`scripts/run_routine.sh`, `run_routine.ps1`). 무인 실행 중에는 확인이 필요한
+06:00, 08:00, 17:00 루틴은 무인 실행이 가능합니다 (`scripts/run_routine.ps1`). 무인 실행 중에는 확인이 필요한
 행동을 시도하지 않습니다.
 
 ---
@@ -122,9 +121,9 @@
 | `protect_secrets.py` | 자격증명이 파일에 기록되는 것을 차단합니다 |
 | `keep_memory_portable.py` | 기억이 워크스페이스 밖이나 특정 도구 전용 저장소에 쌓이는 것을 차단합니다 |
 
-**발송 확인 게이트는 2026-09-10 에 제거했습니다.** 매번 뜨는 확인 창이 세션
-몰입을 깨고 오탐이 잦았기 때문입니다. 메일과 Teams 발송, 캘린더 변경은
-확인 없이 실행됩니다. 이를 막아야 한다면 `HARNESS.md` §6 을 따릅니다.
+메일과 Teams 발송, 캘린더 변경을 기계적으로 막는 장치는 없습니다. 에이전트가
+발송 전 `--dry-run` 으로 내용을 보여드리고 확인을 받는 규칙으로 운영합니다.
+확실히 막아야 하면 `SECURITY.md` §2 의 방법을 씁니다.
 
 ---
 
@@ -148,8 +147,8 @@
 
 현재 가능한 기능과 불가능한 기능은 다음 명령으로 확인합니다.
 
-```bash
-bin/graph check
+```powershell
+bin\graph.cmd check
 ```
 
 각 항목마다 "연결되지 않으면 무엇을 잃는가"와 "대신 무엇이 가능한가"가 함께
@@ -162,11 +161,10 @@ bin/graph check
 | 역할 | 순서 |
 | --- | --- |
 | **교육 담당자** | 이 문서 → `SETUP.md` → `HARNESS.md` → `SECURITY.md` |
+| **개발자** | `DEVELOPMENT.md` |
 | **AX 챔피언 및 DEP** | `SETUP.md` → `HARNESS.md` → `CONNECTIONS.md` → `BOOTSTRAP.md` 0단계 |
 | **본부장** | 별도 문서를 읽으실 필요가 없습니다. 세션에서 말씀하시면 됩니다 |
 | **에이전트** | `CLAUDE.md` → `SYSTEM.md` (자동) |
-
-테스트 절차는 `TESTING.md`에 있습니다.
 
 ---
 
@@ -179,15 +177,15 @@ bin/graph check
 ├── ROUTINES.md        루틴 8종 명세
 ├── BOOTSTRAP.md       개인화 절차
 ├── CONNECTIONS.md     연결 설정과 대체 경로
-├── SECURITY.md        확인 게이트 정책과 자격증명 관리
+├── SECURITY.md        확인 원칙과 자격증명 관리
 ├── SETUP.md           설치 및 사전 준비 (챔피언용)
 ├── HARNESS.md         실행 환경 검증과 대응
-├── TESTING.md         테스트 앱 등록과 확인 순서
-├── bin/graph          Microsoft Graph 단일 진입점
+├── DEVELOPMENT.md     개발자용: 테스트 환경, 배포 전 확인, 변경 이력
+├── bin/graph.cmd      Microsoft Graph 단일 진입점 (Windows). macOS 는 bin/graph
 ├── .claude/
 │   ├── settings.json      권한과 훅 등록
 │   ├── graph_scopes.txt   요청 스코프 (Entra 승인 목록과 일치해야 합니다)
-│   ├── hooks/             안전장치 5종
+│   ├── hooks/             안전장치 3종
 │   └── commands/          슬래시 명령 11종
 ├── scripts/           조회, 발송, 전사, 진단 도구
 ├── templates/         산출물 서식 5종

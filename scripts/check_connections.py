@@ -218,7 +218,7 @@ def check_mcp():
         return [Check(
             "Confluence / Jira MCP", FAIL, "atlassian 서버가 등록되지 않음",
             lost="사내 지식 검색, 과제 추적",
-            fallback="CONNECTIONS.md §5 등록 절차",
+            fallback="챔피언이 사내 절차로 Atlassian MCP 를 연결 (CONNECTIONS.md §5)",
         )]
     connected = "connected" in lowered or "✓" in text
     if connected:
@@ -287,7 +287,7 @@ def check_personalization():
         return Check(
             "개인화 상태", WARN, f"미완료, 미확보 항목 {unknown}개",
             lost="맞춤 답변 전부. 지금은 일반론만 가능합니다",
-            fallback="세션에서 /bootstrap 실행 (필수 10문항, 20분)",
+            fallback="세션에서 /bootstrap 실행 (사전자료 확인 후 부족한 것만 질문)",
         )
     return Check("개인화 상태", OK, f"{state}, 미확보 항목 {unknown}개")
 

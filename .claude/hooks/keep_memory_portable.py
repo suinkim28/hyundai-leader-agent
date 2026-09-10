@@ -179,6 +179,25 @@ def _claude_dir_verdict(tail):
     return None
 
 
+def _is_pointer_only(raw_path: str, data: dict) -> bool:
+    """포인터 파일(CLAUDE.md 등)에 쓰려는 내용이 정말 포인터뿐인가.
+
+    `@SYSTEM.md` 한 줄, 또는 "규칙은 SYSTEM.md 에 있다" 한두 문장은 허용한다.
+    사실이나 규칙을 쌓기 시작하면(길어지면) 막는다. Write 는 content,
+    Edit 는 new_string 을 본다. 판단할 내용이 없으면 허용하지 않는다.
+    """
+    name = Path(raw_path.strip().strip("'\"")).name
+    if name not in POINTER_FILES:
+        return False
+    body = data.get("content")
+    if body is None:
+        body = data.get("new_string")
+    if not isinstance(body, str):
+        return False
+    lines = [l for l in body.splitlines() if l.strip()]
+    return 0 < len(lines) <= 3 and all(len(l) <= 120 for l in lines)
+
+
 def verdict(raw_path: str):
     """막아야 하면 사유를 돌려준다. 괜찮으면 None."""
     if not raw_path:
@@ -258,7 +277,10 @@ def main():
     data = payload.get("tool_input", {}) or {}
 
     if tool in FILE_TOOLS:
-        reason = verdict(data.get("file_path") or data.get("notebook_path") or "")
+        target = data.get("file_path") or data.get("notebook_path") or ""
+        reason = verdict(target)
+        if reason and _is_pointer_only(target, data):
+            return 0  # 포인터 파일을 포인터답게 고치는 것은 허용한다
         if reason:
             return deny(reason)
         return 0

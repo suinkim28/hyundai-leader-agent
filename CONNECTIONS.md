@@ -8,8 +8,10 @@ Graph 조회와 발송은 전부 `bin/graph` 하나로 부른다. **macOS 와 Wi
     bin/graph mail --unread --top 30
     bin/graph check
 
-`bin/graph` 는 셸 스크립트이며 `python3`, `py -3`, `python` 순으로 찾아
-`bin/graph.py` 를 실행한다. Windows 의 python.org 설치본은 `python3` 를
+`bin/graph` 는 셸 스크립트이며 `py`, `python3`, `python` 순으로 찾아
+`bin/graph.py` 를 실행한다. `py` 를 먼저 보는 이유: Windows 에는 실제 Python 이
+없어도 `python3.exe` 라는 이름의 스토어 안내용 가짜가 있어, 그것을 먼저 잡으면
+진짜가 설치돼 있어도 실패한다. Windows 의 python.org 설치본은 `python3` 를
 만들지 않기 때문에, 문서에 `python3` 를 적어두면 본부장 PC 에서 아무것도
 실행되지 않는다.
 
@@ -68,8 +70,8 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
 
 ### 필요한 권한 (위임 / Delegated)
 
-전체 명세와 근거는 `output/MS_Graph_권한요청_2026-09-01.md`.
-여기에는 **1단계 최소 구성 9개**만 적는다. 이것만으로 1회차 세션이 성립한다.
+요청 스코프의 정본은 `.claude/graph_scopes.txt` 다. 아래는 그중 1회차 세션에
+꼭 필요한 것과 각각을 어디에 쓰는지다.
 
 | 권한 | 쓰는 곳 |
 | --- | --- |
@@ -102,26 +104,19 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
    클라이언트 시크릿)를 받는다.
 2. **파일에 적지 말고** OS 자격증명 저장소에 넣는다. 본부장 PC 는 전부
    Windows 이므로, 값은 대화창으로 받아 에이전트가 `bin/graph setup` 을 통해
-   저장한다(§14 참고). 저장 위치는 `scripts/secret_store.py` 기준으로 다음과 같다.
+   저장한다. 저장 위치는 `scripts/secret_store.py` 기준으로 다음과 같다.
 
    | OS | 저장 위치 |
    | --- | --- |
    | **Windows (1순위)** | DPAPI 로 암호화한 `%LOCALAPPDATA%\hmg-agent\secrets\*.dpapi` |
    | macOS | 로그인 키체인 (`security` 명령) |
 
-   macOS 참고(에이전트를 거치지 않고 직접 넣을 때):
-   ```bash
-   security add-generic-password -U -a "$USER" -s hmg-agent-graph-client-id -w
-   security add-generic-password -U -a "$USER" -s hmg-agent-graph-tenant-id -w
-   security add-generic-password -U -a "$USER" -s hmg-agent-graph-client-secret -w
-   ```
-
    macOS 도 Windows 도 아닌 환경에는 저장소가 없다. 저장하지 않고 실패하므로
    값을 환경변수(`MICROSOFT_GRAPH_CLIENT_ID` 등)로 준다.
 
 3. 첫 로그인을 한 번 수행한다. 이후 refresh token 이 자동 갱신된다.
-   ```bash
-   bin/graph mail --top 1
+   ```powershell
+   bin\graph.cmd login
    ```
 
    `bin/graph login` 이 로그인 URL을 만들고 **브라우저를 직접 띄운다.**
@@ -129,17 +124,45 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
    터미널에 함께 출력되는 URL을 직접 열어도 된다.
 
    이 앱은 `http://localhost` 리디렉션을 쓰는 **퍼블릭 클라이언트**로
-   등록돼 있어(§14 참고), 로그인은 PKCE로 증명하고 Client Secret은 이
+   등록돼 있어(아래 리디렉션 URI 참고), 로그인은 PKCE로 증명하고 Client Secret은 이
    과정에 쓰이지 않는다. 로그인에 성공하면 **refresh token 이 자격증명과
    같은 저장소(Windows DPAPI, macOS 키체인)에 저장**되어, 이후 세션이나
    창을 새로 열어도 **다시 로그인할 필요가 없다.** 재로그인이 필요한
    경우는 refresh token 자체가 만료·폐기됐을 때뿐이다.
 
+### 리디렉션 URI
+
+로그인 콜백 주소다. **Entra 앱 등록의 값과 한 글자도 다르면 안 된다.**
+다르면 로그인 화면에서 `AADSTS50011` 이 뜬다.
+
+| 항목 | 값 |
+| --- | --- |
+| 기본값 | `http://localhost:3000/auth/callback` |
+| 근거 | 현대자동차 ICT 가 `HMG-LeaderAXSession-PILOT` 앱에 등록한 값 |
+| 코드 위치 | `scripts/_graph_common.py` 의 `LOCAL_REDIRECT_URI` |
+| 앱 등록 플랫폼 | **모바일 및 데스크톱 앱** (퍼블릭 클라이언트). `http://localhost` 는 이 플랫폼에서만 허용된다 |
+
+이 플랫폼이라 로그인은 PKCE 로 증명하고 Client Secret 을 요청에 넣지 않는다.
+다른 앱을 쓰거나 앱에 다른 값이 등록되어 있으면 코드를 고치지 말고 환경변수로
+맞춘다. `127.0.0.1` 이 아니라 `localhost` 로 적는다. Entra 는 `localhost` 만
+http 예외로 허용한다.
+
+```powershell
+$env:MICROSOFT_GRAPH_REDIRECT_URI = "http://localhost:8765/callback"
+bin\graph.cmd login --check   # 지금 무엇이 쓰이는지
+```
+
+### 스코프
+
+요청 스코프는 `.claude/graph_scopes.txt` 에 있고, Entra 승인 목록과 정확히
+일치해야 한다. **승인 목록에 없는 줄이 하나라도 있으면 로그인 자체가 실패한다.**
+고친 뒤에는 재로그인한다.
+
 ### 확인
 
-```bash
-bin/graph calendar --date <오늘> --days 1
-bin/graph mail --search "키워드" --top 10
+```powershell
+bin\graph.cmd calendar --days 1
+bin\graph.cmd mail --search "키워드" --top 10
 ```
 
 ### 승인 전 대체 경로
@@ -157,18 +180,20 @@ bin/graph mail --search "키워드" --top 10
 
 ## 5. Confluence / Jira (Atlassian MCP)
 
-```bash
-claude mcp add --transport sse atlassian https://mcp.atlassian.com/v1/sse
-claude mcp list          # 연결 상태 확인
-```
-
-첫 사용 시 브라우저 로그인이 뜬다. 본부장 계정으로 로그인한다.
+회의 준비(R3)와 과제 추적(R6)이 사내 지식과 이슈를 읽는 통로다.
+**Atlassian MCP 는 챔피언이 사내 절차에 따라 미리 연결해 둔다.** 등록 방법은
+이 문서에 두지 않는다. 연결됐는지는 `bin\graph.cmd check` 의
+`Confluence / Jira MCP` 줄로 본다.
 
 **조회는 확인 없이 하고, 페이지 생성, 수정과 이슈 변경은 먼저 확인을 받는다.**
 본부 지식베이스 자동 갱신은 위험도가 높으므로 2회차 전까지는 초안 제안까지만
 한다.
 
-승인 전 대체: 필요한 문서를 웹에서 복사해 `knowledge_base/` 에 저장한다.
+| 안 되면 잃는 것 | 대체 경로 |
+| --- | --- |
+| 회의 전 자동 쟁점 정리 | 본부장님이 문서 링크나 내용을 붙여넣으면 읽는다 |
+| 과제 지연, 리스크 자동 추적 | 회의 중 구술로 받아 `projects/` 에 기록 |
+| 과거 유사 건 검색 | `decisions/` 의 자체 이력만 검색 |
 
 ---
 
@@ -177,8 +202,8 @@ claude mcp list          # 연결 상태 확인
 키는 본부장님이 대화창에 값을 주시면 에이전트가 저장한다(Windows 는 DPAPI,
 macOS 는 키체인. §4 등록 절차와 같은 방식).
 
-```bash
-bin/graph transcribe <오디오> --output meetings/transcripts/...
+```powershell
+bin\graph.cmd transcribe <오디오> --output meetings\transcripts\...
 ```
 
 사내 정책상 음성이 외부로 나갈 수 없으면 **폐쇄망 STT 또는 로컬 모델**을
@@ -280,111 +305,4 @@ New-Item -ItemType Directory -Force -Path "logs\<오늘>" | Out-Null
 bin\graph.cmd check > "logs\<오늘>\connections.txt" 2>&1
 ```
 
-macOS/Linux 참고:
-```bash
-mkdir -p logs/<오늘>
-bin/graph check > logs/<오늘>/connections.txt 2>&1
-```
 
----
-
-## 13. Atlassian (Confluence, Jira): 2026-09-03 추가
-
-회의 준비(R3)와 과제 추적(R6)이 사내 지식과 이슈를 읽는 통로다.
-**MCP 등록은 에이전트가 실행하고, 브라우저 로그인만 본부장님이 하신다.**
-
-### 에이전트가 실행하는 것
-
-```
-claude mcp add --transport http atlassian https://mcp.atlassian.com/v1/sse
-```
-
-VS Code 통합 터미널에서 실행하든, 확장이 내부적으로 실행하든 결과는 같다.
-Claude Code CLI 의 사용자 설정(`~/.claude.json`)에 등록되므로 워크스페이스를
-옮겨도 따라오지 않는다는 점만 유의한다 (연결은 PC 단위, 기억은 폴더 단위).
-
-### 본부장님이 하시는 것
-
-브라우저가 열리면 **회사 Atlassian 계정으로 로그인**하고 접근 허용을 누른다.
-한 번만 하면 토큰이 갱신된다.
-
-### 확인
-
-```
-bin/graph check
-```
-
-`Confluence / Jira MCP  연결됨` 이 나오면 끝이다.
-
-### 안 되면 무엇을 잃는가
-
-| 잃는 것 | 대체 경로 |
-| --- | --- |
-| 회의 전 자동 쟁점 정리 | 본부장님이 문서 링크를 붙여넣으면 읽는다 |
-| 과제 지연, 리스크 자동 추적 | 회의 중 구술로 받아 `projects/` 에 기록 |
-| 과거 유사 건 검색 | `decisions/` 의 자체 이력만 검색 |
-
----
-
-## 14. Microsoft Graph 자격증명: 2026-09-03 승인 반영
-
-현대차 ICT 가 `HMG-LeaderAXSession-PILOT` 앱으로 **위임 권한 19종**을 승인했다.
-승인 목록과 사용자 12명은 `source/ict/2026-09-03_Graph권한_승인결과.md` 에 있다.
-
-### 저장 위치
-
-| OS | 저장소 |
-| --- | --- |
-| macOS | 로그인 키체인 |
-| Windows | DPAPI: 사용자 계정에 묶인 암호화 파일 (`%LOCALAPPDATA%\hmg-agent\secrets`) |
-
-워크스페이스 파일에는 쓰지 않는다. `.env` 도 만들지 않는다.
-
-### 설정
-
-본부장님은 에이전트에게 말만 하면 된다.
-
-> "Graph 설정해줘"
-
-에이전트가 `.claude/commands/setup.md` 절차대로 값을 여쭙고 저장한 뒤
-로그인까지 진행한다. 자격증명이 없으면 세션 시작 훅이 자동으로 이 절차를 띄운다.
-
-
-### 리디렉션 URI
-
-로그인 콜백 주소입니다. **Entra 앱 등록의 값과 한 글자도 다르면 안 됩니다.**
-다르면 로그인 화면에서 `AADSTS50011` 이 뜹니다.
-
-| 항목 | 값 |
-| --- | --- |
-| 기본값 | `http://localhost:3000/auth/callback` |
-| 근거 | 현대자동차 ICT 가 `HMG-LeaderAXSession-PILOT` 앱에 등록한 값 |
-| 코드 위치 | `scripts/_graph_common.py` 의 `LOCAL_REDIRECT_URI` |
-| 앱 등록 플랫폼 | **모바일 및 데스크톱 앱** (퍼블릭 클라이언트). "웹" 플랫폼이 아니다 — `http://localhost` 는 이 플랫폼에서만 허용된다 (`TESTING.md` §1) |
-
-이 플랫폼이라 로그인은 **PKCE** 로 증명하고 Client Secret 을 요청에
-넣지 않는다. 새로 앱을 등록할 일이 있으면(다른 조직, 다른 테넌트)
-처음부터 이 플랫폼으로 만든다. "웹"으로 등록하면 로그인 시
-`AADSTS700025` 로 실패한다.
-
-현재 무엇이 쓰이는지는 다음으로 확인합니다.
-
-```
-bin/graph login --check
-```
-
-다른 앱을 쓰거나 앱에 이미 다른 값이 등록되어 있으면 **코드를 고치지 말고
-환경변수로 맞춥니다.**
-
-```powershell
-$env:MICROSOFT_GRAPH_REDIRECT_URI = "http://localhost:8765/callback"
-```
-
-포트는 URI 에서 자동으로 읽어 콜백 서버가 그 포트에서 듣습니다.
-`127.0.0.1` 이 아니라 `localhost` 로 적어야 합니다. Entra 는 `localhost` 만
-http 예외로 허용합니다.
-
-### 스코프
-
-요청 스코프는 `.claude/graph_scopes.txt` 에 있고, Entra 승인 목록과 정확히 일치한다.
-**승인 목록에 없는 줄이 하나라도 있으면 로그인 자체가 실패한다.** 고친 뒤에는 재로그인한다.

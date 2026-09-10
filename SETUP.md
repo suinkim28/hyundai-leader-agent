@@ -15,30 +15,31 @@
 | 항목 | 확인 |
 | --- | --- |
 | **본부장 실제 사용 PC** (챔피언 PC 아님), Windows | 여기서 돌지 않으면 의미가 없다 |
-| Python 3.11 이상 | **본부장 PC 에는 기본으로 설치돼 있지 않을 가능성이 높다.** `py --version` 으로 확인. 없으면 `winget install Python.Python.3.12` 또는 python.org 설치본으로 설치하고, 설치 화면의 **Add python.exe to PATH** 를 체크한다. 설치 후 `bin/graph check` 로 재확인 |
+| Python 3.11 이상 | **본부장 PC 에는 기본으로 설치돼 있지 않을 가능성이 높다.** `py --version` 으로 확인. 없으면 `winget install --id Python.Python.3.12 --scope user` 또는 python.org 설치본으로 설치하고, 설치 화면의 **Add python.exe to PATH** 를 체크한다. 설치 후 `bin/graph check` 로 재확인 |
 | **VS Code** | 사내 표준 배포판 또는 code.visualstudio.com |
 | **Claude Code 확장** (`anthropic.claude-code`, VS Code 마켓플레이스) | 확장이 내부적으로 Claude Code CLI 를 실행한다 |
-| Claude Code CLI (무인 루틴용) | `npm install -g @anthropic-ai/claude-code` 로 전역 설치되어 있으면 `claude --version` 으로 확인 |
-| 본부장 사내 계정 로그인 상태 | |
+| Node.js (무인 루틴용) | `node --version`. 없으면 `winget install OpenJS.NodeJS.LTS`. 무인 루틴을 안 쓰면 생략 |
+| Claude Code CLI (무인 루틴용) | `npm install -g @anthropic-ai/claude-code` 후 `claude --version` |
+| Playwright MCP | 웹 자료 조회용. **headed 모드**를 기본으로 등록. 등록 방법은 사내 절차 |
+| Atlassian MCP | Confluence, Jira 조회용. 등록 방법은 사내 절차. `bin\graph.cmd check` 의 `Confluence / Jira MCP` 줄로 확인 |
+| 본부장 사내 계정 로그인 상태 | Outlook, Teams 가 이 PC 에서 열리는지 |
 | `pip install truststore` | **사내망(SSL 인스펙션 프록시)에서만 필요.** 안 하면 `bin/graph check` 에서 Outlook 메일, 캘린더, Teams 가 `CERTIFICATE_VERIFY_FAILED` 로 전부 실패한다 (`TODO.txt` 참고). Python 3.10 이상 필요. 프록시가 없는 망이면 안 해도 무방하다 |
 
 ### 0-2. 워크스페이스 배치
 
-이 폴더를 통째로 본부장 PC의 작업 위치에 복사하고 이름을 바꾼다.
-
-Windows PowerShell (1순위):
+받은 스켈레톤 폴더(예: `hyundai-leader-agent-main-skeleton`)를 본부장 PC 의
+작업 위치에 통째로 복사하고 이름을 바꾼다.
 
 ```powershell
-Copy-Item -Recurse agent_skeleton "$HOME\비서"
+Copy-Item -Recurse hyundai-leader-agent-main-skeleton "$HOME\비서"
 Set-Location "$HOME\비서"
 ```
 
-macOS/Linux (참고):
-
-```bash
-cp -R agent_skeleton ~/비서
-cd ~/비서
-```
+복사하기 전에 스켈레톤이 **비어 있는지** 확인한다: `PROFILE.md` 와 `ORG.md` 가
+`templates/` 의 원본과 같고, `attachments/`, `meetings/`, `decisions/`,
+`drafts/`, `briefings/`, `logs/` 에 `.gitkeep` 외의 파일이 없어야 한다.
+앞선 본부장의 자료가 남아 있으면 새 본부장의 에이전트가 그 사람 기준으로
+개인화를 시작한다.
 
 **본부장 한 분당 한 폴더다.** 여러 본부장이 하나를 공유하지 않는다.
 `PROFILE.md` 와 `ORG.md` 가 사람마다 다르고, 그 안에 대외비가 쌓인다.
@@ -54,7 +55,7 @@ cd ~/비서
 무시되고, 조회할 때마다 확인 창이 뜬다.
 
 ```
-Ignoring 25 permissions.allow entries from .claude/settings.json:
+Ignoring N permissions.allow entries from .claude/settings.json:
 this workspace has not been trusted.
 ```
 
@@ -85,14 +86,14 @@ VS Code + Claude Code 확장은 공식 확장이므로 `.claude/settings.json` �
 셸에서 아래를 돌려도 되지만, 이것만으로는 세션 훅이 `미확인` 으로 남는다.
 판정을 끝내려면 에이전트 안에서 `/selftest` 를 해야 한다.
 
-```bash
-bin/graph verify
+```powershell
+bin\graph.cmd verify
 ```
 
 ### 0-5. 연결 진단
 
-```bash
-bin/graph check
+```powershell
+bin\graph.cmd check
 ```
 
 `실패` 항목이 나오는 것은 정상이다. 이 시점에는 아직 아무것도 연결되지
@@ -100,13 +101,20 @@ bin/graph check
 
 ### 0-6. 훅 단독 실행 확인
 
-```bash
-echo '{"tool_name":"Write","tool_input":{"file_path":"~/canary.md"}}' \
-  | .claude/hooks/run keep_memory_portable.py
+```powershell
+'{"tool_name":"Write","tool_input":{"file_path":"~/canary.md"}}' | py -3 .claude\hooks\keep_memory_portable.py
 ```
 
 `permissionDecision: deny` 가 나오면 정상이다. 아무것도 안 나오면 훅이 동작하지
 않는 것이므로 Python 경로를 확인한다.
+
+### 0-7. Graph 자격증명과 로그인
+
+에이전트를 열고 "설정해줘" 라고 말한 뒤, 에이전트가 여쭙는 세 값(Client ID,
+Tenant ID, Client Secret)을 붙여넣는다. 챔피언이 하든 본부장이 하든 경로는 같다.
+에이전트가 저장하고 로그인(브라우저, 회사 계정, 1회)까지 진행한다.
+끝나면 `bin\graph.cmd check` 에서 Outlook 메일, 캘린더, Teams 가 `조회 성공`
+이어야 한다. 값을 대화창에 붙여넣으면 세션 로그에 남는다는 점은 `SECURITY.md` §4.
 
 ---
 
@@ -121,7 +129,7 @@ echo '{"tool_name":"Write","tool_input":{"file_path":"~/canary.md"}}' \
 
 동시에 **승인 없이도 성립하는 최소 시나리오를 병행 준비한다.**
 승인을 기다리다가 세션 당일에 아무것도 못 보여주는 것이 최악이다
-(`CONNECTIONS.md` §1).
+(`CONNECTIONS.md` §2).
 
 ---
 
@@ -157,7 +165,7 @@ bin\graph.cmd check > "logs\<오늘>\connections.txt" 2>&1
 - [ ] §4 진행 중 과제와 마일스톤
 - [ ] §5 정기 회의 + 녹음 가능 여부
 - [ ] §6 실제로 쓰는 시스템만
-- [ ] §7 본부 약어, 용어 → `knowledge_base/용어집.txt` 에도 복사
+- [ ] §7 본부 약어, 용어 → `knowledge_base/transcription_glossary.txt` 에도 한 줄에 하나씩
 
 ### 3-3. 데이터 샘플 확보
 
@@ -185,12 +193,9 @@ bin\graph.cmd check > "logs\<오늘>\connections.txt" 2>&1
 - [ ] Quick Win 1건이 **실제 본부장 데이터로** 동작한다
 - [ ] 무인 루틴 등록 (선택)
       ```powershell
-      .\scripts\run_routine.ps1 morning-brief     # Windows (1순위)
+      .\scripts\run_routine.ps1 morning-brief
       ```
-      ```bash
-      ./scripts/run_routine.sh morning-brief      # macOS/Linux (참고)
-      ```
-      정상 동작을 확인한 뒤 작업 스케줄러(Windows) / launchd(macOS) 에 등록한다.
+      정상 동작을 확인한 뒤 작업 스케줄러에 등록한다.
       등록 예시는 스크립트 상단 주석과 `HARNESS.md` §5 에 있다.
 - [ ] 세션에서 보여줄 화면 순서를 정한다. 즉석에서 찾지 않는다.
 
@@ -206,9 +211,9 @@ bin\graph.cmd check > "logs\<오늘>\connections.txt" 2>&1
 
 **하는 것**
 
-1. `/bootstrap`: 필수 10문항 (20분).
+1. `/bootstrap`: 사전자료를 먼저 읽고, 자료로 확인되지 않는 것만 여쭙는다 (5분).
    본부장이 타이핑하지 않는다. 말씀하시면 에이전트가 적는다.
-2. 7번 답(없어졌으면 하는 반복 작업)을 **그 자리에서 실행**해 보여준다.
+2. "없어졌으면 하는 반복 작업" 으로 답하신 것을 **그 자리에서 실행**해 보여준다.
    설명하지 말고 돌린다.
 3. 결과를 보고 본부장이 "이건 이렇게 해달라"고 하시는 것을 `PROFILE.md` 에
    즉시 적는다. **이 왕복이 진짜 개인화다.** 2~3회 반복하면 목적 달성이다.
@@ -229,7 +234,7 @@ bin\graph.cmd check > "logs\<오늘>\connections.txt" 2>&1
 
 ```powershell
 Get-ChildItem briefings\ | Sort-Object LastWriteTime -Descending | Select-Object -First 10   # 루틴이 실제로 돌고 있는가
-Get-Content PROFILE.md -Tail 30                                                              # §10 누적 학습 로그가 늘고 있는가
+Get-Content PROFILE.md -Tail 30                                                              # §9 누적 학습 로그가 늘고 있는가
 bin\graph.cmd check --quiet
 ```
 
@@ -258,48 +263,10 @@ bin\graph.cmd check --quiet
 | --- | --- | --- |
 | 세션 시작하자마자 질문만 한다 | 정상. `PROFILE.md` 가 `미완료` 상태 | `/bootstrap` 진행 |
 | 조회할 때마다 확인 창이 뜬다 | 워크스페이스 미신뢰 | VS Code 신뢰 대화상자에서 Trust 선택 (§0-3) |
-| 메일, 일정이 비어 있다 | Graph 미승인 또는 첫 로그인 전 | `check_connections.py`. 승인 전이면 내보내기 파일 |
+| 메일, 일정이 비어 있다 | Graph 미승인 또는 첫 로그인 전 | `bin\graph.cmd check`. 승인 전이면 내보내기 파일 |
 | 답변에 출처가 없다 | 훅이 지적했는데 넘어갔다 | `SYSTEM.md` §3 을 다시 읽히고, 반복되면 `PROFILE.md` §4 에 규칙 추가 |
 | 무인 루틴이 안 돈다 | 작업 스케줄러가 사용자 PATH 를 안 물려받아 `claude` 를 못 찾는다 | `HMG_CLAUDE_BIN` 에 경로 지정 (`HARNESS.md` §5). 로그는 `logs/YYYY-MM-DD/` |
-| 훅이 하나도 안 돈다 | **Python 이 이 컴퓨터에 없다** | `py --version` 확인, 없으면 `winget install Python.Python.3.12` |
-| 발송 확인 창이 안 뜬다 | **훅이 죽어 있다** | 즉시 중단. `/selftest` → `HARNESS.md` §3, 필요하면 §6 축소 운영 |
+| 훅이 하나도 안 돈다 | **Python 이 이 컴퓨터에 없다** | `py --version` 확인, 없으면 `winget install --id Python.Python.3.12 --scope user` |
 | `/명령` 이 안 먹힌다 | 명령 파일 인식 지연 (드묾) | 평상어로 호출 (`SYSTEM.md` §6 대응표), VS Code 재시작 |
-| 회의록에 이름이 틀린다 | 용어집 미반영 | `knowledge_base/용어집.txt` 에 고유명사 추가 |
+| 회의록에 이름이 틀린다 | 용어집 미반영 | `knowledge_base/transcription_glossary.txt` 에 고유명사 추가 |
 
----
-
-## 2026-09-03 갱신: Graph 권한 승인 반영
-
-현대차 ICT 가 `HMG-LeaderAXSession-PILOT` 앱으로 위임 권한 19종을 승인했다.
-승인 사용자는 본부장 4명과 운영자, 챔피언 8명, 총 12명이다.
-상세는 `source/ict/2026-09-03_Graph권한_승인결과.md`.
-
-### 챔피언이 미리 할 것 (본부장 세션 D-3)
-
-1. 본부장 PC 에 이 스켈레톤을 복사한다
-2. 에이전트를 열고 "설정해줘" 라고 말한 뒤, 물어보는 세 값을 붙여넣는다.
-   챔피언이 하든 본부장이 하든 경로는 같다
-
-3. 로그인해 토큰을 만든다. 브라우저에서 회사 계정으로 한 번만 하면 된다
-
-   ```
-   bin/graph login
-   ```
-
-4. Atlassian MCP 를 연결한다 (`CONNECTIONS.md` §13)
-5. 확인한다
-
-   ```
-   bin/graph check
-   ```
-
-### 시크릿과 대화 기록
-
-이 경로에서는 시크릿이 세션 로그에 남는다. 본부장이 터미널을 열지 않는 것이
-우선이라 이렇게 정했다. PoC 종료 시 재발급으로 처리한다 (`SECURITY.md`).
-
-### 주의
-
-`.claude/graph_scopes.txt` 는 Entra 승인 목록과 정확히 일치해야 한다.
-**승인되지 않은 권한이 한 줄이라도 있으면 로그인 자체가 실패한다.**
-권한이 추가, 회수되면 이 파일부터 맞춘다.

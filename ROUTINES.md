@@ -30,7 +30,7 @@
 ---
 
 
-## 도구 호출 규약 (2026-09-03)
+## 도구 호출 규약
 
 Graph 관련 조회와 발송은 전부 단일 진입점을 쓴다. 무엇을 쓸 수 있는지는
 `bin/graph --help` 가 보여준다.
@@ -220,9 +220,9 @@ Graph 관련 조회와 발송은 전부 단일 진입점을 쓴다. 무엇을 �
 
 ## R5: 결재, 보고자료 검토 (결재 시)
 
-> 2026-09-03 `Files.ReadWrite.All` 이 승인되어 SharePoint 링크로만 오는 보고자료의
-> 원문을 직접 읽을 수 있다. 첨부가 링크뿐이어도 "확인하지 못한 것" 으로 미루지 말 것.
-> `bin/graph files search` → `bin/graph files get` 으로 받아 읽는다.
+SharePoint 링크로만 오는 보고자료도 원문을 직접 읽을 수 있다. 첨부가 링크뿐이어도
+"확인하지 못한 것" 으로 미루지 않는다. `bin/graph files search` →
+`bin/graph files get` 으로 받아 읽는다.
 
 **목적**: 결재를 대신하지 않는다. **결재하실 수 있게** 만든다.
 근거가 부족한 곳과 서로 어긋나는 곳을 찾아 표시하는 것이 전부다.
@@ -296,9 +296,8 @@ Graph 관련 조회와 발송은 전부 단일 진입점을 쓴다. 무엇을 �
 
 ## R7: 회의 정리 (회의 후)
 
-> 2026-09-03 `Notes.ReadWrite` 가 승인됐다. 본부장이 OneNote 로 회의 메모를
-> 관리하신다면 `bin/graph notes books` 로 기존 구조를 먼저 읽고 그 체계에 맞춘다.
-> 새 체계를 만들지 않는다.
+본부장이 OneNote 로 회의 메모를 관리하신다면 `bin/graph notes books` 로 기존
+구조를 먼저 읽고 그 체계에 맞춘다. 새 체계를 만들지 않는다.
 
 **목적**: 원문을 남기고, 요약하고, 실행사항을 사람과 날짜에 붙인다.
 
@@ -312,7 +311,7 @@ Graph 관련 조회와 발송은 전부 단일 진입점을 쓴다. 무엇을 �
      --output meetings/transcripts/YYYY-MM-DD_<제목>_TRANSCRIPT.md \
      --json-output meetings/transcripts/YYYY-MM-DD_<제목>_TRANSCRIPT.json
    ```
-   `knowledge_base/용어집.txt` 를 프롬프트에 넣어 고유명사 정확도를 올린다.
+   `knowledge_base/transcription_glossary.txt` 를 프롬프트에 넣어 고유명사 정확도를 올린다.
 2. **원문을 먼저 저장한다.** 요약이 틀렸을 때 돌아갈 곳이다.
    원본 오디오 경로를 파일 머리에 적는다.
 3. 요약한다: 논의된 것, 합의된 것, 합의되지 않은 것.

@@ -63,9 +63,9 @@ bin/graph login
 
 ## 4. Confluence, Jira
 
-`bin/graph check` 에서 Atlassian 이 안 잡히면 안내한다.
-연결 절차는 `CONNECTIONS.md` 의 Atlassian 절을 따른다.
-MCP 등록은 에이전트가 실행하고, 브라우저 로그인만 본부장님이 하신다.
+Atlassian MCP 는 챔피언이 사내 절차로 미리 연결해 둔다. `bin/graph check` 에서
+안 잡히면 직접 등록하려 하지 말고, 그 사실을 본부장님께 알리고 챔피언에게
+전달되도록 한다. 그동안은 `CONNECTIONS.md` §5 의 대체 경로로 진행한다.
 
 ## 5. 확인
 
@@ -81,4 +81,4 @@ bin/graph check
 
 설정이 끝나면 멈추지 말고 바로 `/bootstrap` 으로 넘어간다.
 
-> 연결은 끝났습니다. 이제 본부장님께 맞추는 질문을 드리겠습니다. 20분 정도 걸립니다.
+> 연결은 끝났습니다. 이제 본부장님께 맞추는 작업을 시작하겠습니다.

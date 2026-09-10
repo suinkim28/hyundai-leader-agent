@@ -1,5 +1,5 @@
 {
-  "$comment": "본부장 AI 비서 스켈레톤. 2026-09-10, 발송 확인 훅(guard_external_actions.py)을 제거했다. 매번 뜨는 확인 창이 세션 몰입을 깨고, 문자열 매칭이라 --help 같은 무해한 명령까지 잡는 오탐이 잦았다. 따라서 지금은 메일, Teams 발송과 캘린더 변경, 삭제가 확인 없이 실행된다. Bash(*) 는 원래 저 훅이 뒤를 받쳐 준다는 전제로 넓힌 것이므로, 지금은 넓은 허용을 받쳐 주는 것이 없다는 점을 알고 쓴다. 남은 훅 두 개는 파일 쓰기만 본다: protect_secrets.py 는 자격증명 파일, keep_memory_portable.py 는 워크스페이스 밖 쓰기. 훅은 .claude/hooks/run 을 거쳐 부른다: Windows 에는 python3 가 없어 직접 부르면 훅이 통째로 실행되지 않는다.",
+  "$comment": "본부장 AI 비서 스켈레톤. Bash(*) 를 넓게 허용하며, 메일·Teams 발송과 캘린더 변경을 기계적으로 막는 훅은 없다 (SECURITY.md 2절). 훅 두 개는 파일 쓰기만 본다: protect_secrets.py 는 자격증명 파일, keep_memory_portable.py 는 워크스페이스 밖과 하네스 전용 저장소로의 쓰기. autoMemoryEnabled 를 끈 이유는 SYSTEM.md 8절. 훅은 .claude/hooks/run 을 거쳐 부른다: Windows 에는 python3 가 없어 직접 부르면 훅이 통째로 실행되지 않는다. 경위는 DEVELOPMENT.md.",
   "autoMemoryEnabled": false,
   "permissions": {
     "allow": [

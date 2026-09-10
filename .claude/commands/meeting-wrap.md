@@ -14,7 +14,7 @@ bin/graph transcribe <오디오경로> \
   --json-output meetings/transcripts/<오늘>_<제목>_TRANSCRIPT.json
 ```
 
-`knowledge_base/용어집.txt` 를 프롬프트에 넣어 고유명사 정확도를 올린다.
+`knowledge_base/transcription_glossary.txt` 를 프롬프트에 넣어 고유명사 정확도를 올린다.
 
 1. **원문을 먼저 저장한다.** 요약이 틀렸을 때 돌아갈 곳이다. 원본 오디오
    경로를 파일 머리에 적는다.

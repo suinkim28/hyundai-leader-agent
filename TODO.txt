@@ -1,81 +1,25 @@
-이 스켈레톤에서 해결해야 할 문제
-- [해결됨] 이메일 읽을때 인코딩 깨지는 문제
-  원인: 한국어 Windows 콘솔 코드페이지(cp949)와 Python 기본 출력 인코딩 불일치.
-  bin/graph, bin/graph.cmd, .claude/hooks/run 에 PYTHONUTF8=1 을 추가해 해결.
-  추가로 bin/graph.cmd 자체에 한글이 들어 있으면 cmd.exe 가 배치 파일을
-  잘못 파싱해 "내부 명령이 아닙니다" 오류까지 낼 수 있어, 이 파일은 ASCII만
-  쓰도록 재작성함 (HARNESS.md §9 참고).
+AX 챔피언이 해야 할 것 (본부장 세션 D-3 까지, SETUP.md 순서대로)
+- Python 3.12 설치: winget install --id Python.Python.3.12 --scope user
+- Playwright MCP 등록 (headed 모드 기본), Atlassian MCP 연결. 방법은 사내 절차
+- Graph 자격증명 저장과 첫 로그인 (SETUP.md 0-7)
+- ORG.md 초안 (현재 전 항목 [미확보]): 본부 개요, 보고 라인, 팀장급 구성원,
+  진행 중 과제, 정기 회의, 시스템/저장소, 약어 → SETUP.md 3-2 체크리스트
+- knowledge_base/transcription_glossary.txt 에 본부 고유명사 (한 줄에 하나)
 
-- [해결됨] Graph 로그인이 Windows 에서 AADSTS700025 로 실패하던 문제
-  원인: 이 앱은 퍼블릭 클라이언트(모바일/데스크톱 플랫폼)인데 코드가
-  client_secret 을 같이 보내고 있었음. PKCE 로 전환해 해결
-  (당시 scripts/fetch_teams_message.py, scripts/check_connections.py.
-  이후 2026-09-09 리팩토링으로 인증 코드는 scripts/_graph_common.py 로 이동함).
-  덤으로 브라우저 자동 실행(webbrowser.open, 기존엔 macOS open 만 됐음)과
-  refresh token 의 Windows DPAPI 저장(기존엔 평문 파일)도 같이 고침.
-  자세한 내용: SECURITY.md "2026-09-09 반영", TESTING.md §1.
-
-- [해결됨] 사내망에서 Graph 호출이 CERTIFICATE_VERIFY_FAILED 로 실패하던 문제
-  원인: HMG 사내 SSL 인스펙션 프록시(HMG Secure ROOT CA)가 Graph HTTPS 를
-  가로채는데, Python 은 certifi 번들만 신뢰하고 Windows 인증서 저장소에
-  등록된 HMG CA 는 모르기 때문에 거부함. 브라우저/Office 는 Windows
-  저장소를 쓰므로 같은 PC 에서도 멀쩡해 보여 원인 파악이 늦어지기 쉬움.
-  해결: scripts/_graph_common.py 맨 위에서 truststore 를 ssl 모듈에 주입
-  (inject_into_ssl). 모든 Graph 스크립트가 이 파일을 import 하므로 한 곳만
-  고치면 전체에 적용됨. import 는 try/except 로 감쌌으므로 미설치 PC 는
-  기존과 동일하게 동작(=프록시 없는 환경에서는 원래도 문제없었고, 계속
-  문제없음).
-  확인: 프록시 없는 환경(이 테스트 테넌트)에서 truststore 설치 전/후로
-  bin/graph check 결과가 동일함 (정상 9, 회귀 없음) — 신뢰 소스만
-  Windows 저장소로 바꾸는 것이라 검증 자체를 끄는 게 아니기 때문.
-  남은 일: 사내망(프록시 있는 PC)에서는 `pip install truststore` 를
-  한 번 실행해야 함 (Python 3.10+ 필요). SETUP.md §0-1 준비물에 추가함.
-
-- [해결됨] scripts/fetch_teams_message.py 이름이 실제 역할과 맞지 않던 문제
-  증상: "이름이 이상한데" — Teams 메시지 조회 전용처럼 보이는 파일에
-  인증/토큰/시크릿 저장 코드 전체(PKCE 로그인, 디바이스 코드,
-  client_credentials, 로컬 콜백 서버, DPAPI 저장, GRAPH_BASE,
-  HttpRequestError 등, 848줄 중 대부분)가 들어 있었고, mail/calendar/
-  files/notes/reply 등 9개 스크립트가 전부 거기서 import 해다 썼음.
-  `_graph_common.py` 는 이름 그대로 "공통 부분"이라는 문서까지 있었는데
-  정작 내용은 없이 fetch_teams_message 에서 재수출만 하고 있었음 —
-  이름과 실제 역할이 뒤바뀐 상태.
-  원인 추정: Teams 조회 기능을 제일 먼저 만들면서 인증 코드를 같이 짰고,
-  이후 스크립트가 늘 때마다 "이미 있는 코드"를 거기서 그냥 가져다 쓰며 굳어짐.
-  해결: 인증/토큰/시크릿/저수준 HTTP 코드를 scripts/_graph_common.py 로
-  이동. fetch_teams_message.py 는 이름대로 Teams 딥링크 해석과 채널/채팅
-  메시지 조회 로직만 남김. 의존하던 9개 파일
-  (check_connections.py, create_outlook_event.py, fetch_graph_notes.py,
-  fetch_outlook_calendar.py, fetch_outlook_mail.py,
-  post_teams_channel_message.py, reply_outlook_mail.py,
-  send_teams_reply.py, bin/graph.py) 의 import 를 _graph_common 으로
-  변경. send_teams_reply.py 만 parse_teams_message_url 때문에
-  fetch_teams_message 도 계속 import 함 (Teams 전용 함수라 그대로 둠).
-  확인: 전체 py_compile 통과, mail/calendar/teams/teams-search/notes/
-  login --check/check 실행 확인, reply-mail/post-teams/send-teams-reply/
-  create-event 의 --dry-run 확인. 전부 회귀 없음.
-
-AX챔피언이 해야할 것
-- Python 설치해야 함 (3.12) → 확인된 방법: winget install --id Python.Python.3.12 --scope user
-- Playwright MCP 설치해두어야 함, headed 모드를 기본으로
-- Atlassian MCP 설치
-- ORG.md 업데이트해야 함 (현재 전 항목 [미확보]): 본부 개요, 보고 라인,
-  팀장급 구성원, 진행 중 과제, 정기 회의, 시스템/저장소, 약어 → SETUP.md
-  §3-2 체크리스트대로 채운다
-
-세션에서 김수인 CRO 가 해야할 것
+세션에서 김수인 CRO 가 해야 할 것
 - Claude auto memory 를 켜 드릴지 본부장께 확인하고, 원하시면 그 자리에서
   경로를 잡아 드린다.
-  현재 상태: .claude/settings.json 에 autoMemoryEnabled: false 로 꺼 두었다.
-  Claude 가 스스로 배운 것을 ~/.claude/projects/<프로젝트>/memory/ 에 쌓는데,
-  이 경로는 폴더를 옮겨도 따라오지 않고 다른 에이전트도 못 읽기 때문이다.
-  대신 keep_memory_portable 훅이 그쪽 쓰기를 막고 PROFILE.md/ORG.md 로
-  가라고 알려준다.
-  켜는 방법: autoMemoryEnabled 를 true 로 되돌리고 autoMemoryDirectory 에
-  워크스페이스 안 경로를 지정한다. 그러면 메모리가 폴더와 함께 이동한다.
-  왜 스켈레톤에 미리 못 박아 두는가: 이 설정은 절대경로 또는 ~/ 로 시작하는
-  값만 받는다 (상대경로 불가, 공식 문서 명시). 본부장마다 폴더 위치가 달라
-  공용 스켈레톤에 값을 박아 둘 수 없다. 세션에서 그 PC 의 실제 경로를
-  확인한 뒤 넣어야 한다. 예: C:\Users\<사번>\비서\memory
-  같이 할 것: 그 폴더를 .gitignore 에 추가한다. auto memory 파일에는 본부장
-  개인 정보가 쌓이므로 커밋되면 안 된다.
+  현재: .claude/settings.json 에 autoMemoryEnabled: false. Claude 가 스스로 배운
+  것을 ~/.claude/projects/<프로젝트>/memory/ 에 쌓는데, 이 경로는 폴더를 옮겨도
+  따라오지 않고 다른 에이전트도 못 읽는다. 대신 keep_memory_portable 훅이 그쪽
+  쓰기를 막고 PROFILE.md / ORG.md 로 가라고 알려준다.
+  켜는 방법: autoMemoryEnabled 를 true 로, autoMemoryDirectory 에 워크스페이스
+  안 경로를 지정. 이 설정은 절대경로 또는 ~/ 로 시작하는 값만 받아(상대경로
+  불가) 공용 스켈레톤에 박아 둘 수 없다. 그 PC 의 실제 경로를 세션에서 넣는다.
+  예: C:\Users\<사번>\비서\memory
+  같이 할 것: 그 폴더가 커밋되지 않도록 개발 리포의 .gitignore 에 추가한다.
+
+PoC 종료 시
+- Graph Client Secret 재발급. 현재 값은 2026-09-03 Teams 메시지로 평문 전달됐고
+  본부장 PC 여러 대에 같은 값이 복제된다. 만료 2027-09-02
+- 시크릿이 담긴 Teams 메시지 삭제 요청

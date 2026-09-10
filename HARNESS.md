@@ -3,17 +3,15 @@
 이 스켈레톤은 **VS Code 위에서 도는 공식 Claude Code 확장**(`anthropic.claude-code`,
 Claude Code CLI 기반) 위에서 돈다. 본부장 PC 는 전부 Windows 다.
 
-정체불명의 사내 래퍼가 아니라 Anthropic 공식 확장이므로 `.claude/settings.json` 의
-훅, 권한 등록은 **표준으로 지원된다.** 그래도 배포 직후 한 번 `/selftest` 를 도는
-이유는 래퍼 신뢰성 문제가 아니라 훨씬 평범한 것들이다.
+공식 확장이므로 `.claude/settings.json` 의 훅, 권한 등록은 **표준으로 지원된다.**
+그래도 배포 직후 한 번 `/selftest` 를 도는 이유는 평범한 것들이다.
 
 - 이 컴퓨터에 **Python 이 없으면** 훅 스크립트 자체가 실행되지 않는다.
 - **워크스페이스를 신뢰하지 않았으면** 권한 설정이 통째로 무시된다.
 - **다른 폴더에서 확장을 열었으면**(멀티루트 워크스페이스 등) 훅이 보는 프로젝트
   루트가 어긋나 아무것도 안 읽힌다.
 
-세 가지 모두 겉보기에는 정상 동작하면서 확인 창만 안 뜨는 상태를 만든다는 점은
-같다. 그래서 검증 방식 자체는 바꾸지 않는다.
+세 가지 모두 겉보기에는 정상 동작하면서 안전장치만 조용히 빠진 상태를 만든다.
 
 ---
 
@@ -75,7 +73,7 @@ Python 경로나 프로젝트 루트 설정에 구체적인 문제가 있다는 
 
 | 증상 | 원인 | 조치 |
 | --- | --- | --- |
-| 훅 파일은 있는데 **실행 흔적 없음**, 오류 메시지도 없음 | Python 이 PATH 에 없다 | `py --version` 확인. 없으면 python.org 설치본 또는 `winget install Python.Python.3.12` 로 설치 후 VS Code 재시작 |
+| 훅 파일은 있는데 **실행 흔적 없음**, 오류 메시지도 없음 | Python 이 PATH 에 없다 | `py --version` 확인. 없으면 python.org 설치본 또는 `winget install --id Python.Python.3.12 --scope user` 로 설치 후 VS Code 재시작 |
 | `프로젝트 루트` 불일치 | 이 폴더가 아니라 상위/다른 폴더를 열었다 (멀티루트 워크스페이스 포함) | VS Code 에서 `파일 → 폴더 열기` 로 이 폴더 자체를 단일 루트로 다시 연다 |
 | 조회마다 확인 창 | 워크스페이스 미신뢰 | §4 |
 | `session_start` 만 안 됨 | 세션이 아직 한 번도 열리지 않았다 | 새 대화창을 한 번 시작한 뒤 재확인 |
@@ -95,7 +93,7 @@ folder?"** 대화상자를 띄운다. **Trust** 를 눌러야 `.claude/settings.
 신뢰하지 않으면 CLI 쪽에서도 다음과 같은 경고가 남는다.
 
 ```
-Ignoring 25 permissions.allow entries from .claude/settings.json:
+Ignoring N permissions.allow entries from .claude/settings.json:
 this workspace has not been trusted.
 ```
 
@@ -139,46 +137,37 @@ Register-ScheduledTask -TaskName "HMG-Agent-MorningBrief" -Action $a -Trigger $t
 `run_routine.ps1` 은 `HMG_CLAUDE_BIN` → PATH → 흔한 설치 위치(npm 전역, VS Code
 확장 번들 경로) 순으로 찾는다. 찾지 못하면 어디를 뒤졌는지 로그에 남기고 멈춘다.
 
-macOS/Linux (참고):
-
-```bash
-export HMG_CLAUDE_BIN="$(npm config get prefix)/bin/claude"
-./scripts/run_routine.sh morning-brief
-```
-
 **헤드리스 실행이 아예 불가능하면** 무인 루틴을 포기하고, 본부장이 아침에
 `/morning-brief` 를 한 번 누르는 방식으로 바꾼다. 루틴 자체는 그대로 동작한다.
 잃는 것은 자동 실행이지 기능이 아니다.
 
 ---
 
-## 6. 훅이 죽었을 때의 축소 운영
+## 6. 발송 수단을 물리적으로 없애는 축소 운영
 
-발송 확인 게이트는 2026-09-10 에 제거했다. 되돌릴 수 없는 발송을 막아야
-하는 본부장이라면, 안전장치를 **문서가 아니라 파일 배치로** 만든다.
+발송을 막는 훅은 없다. 되돌릴 수 없는 발송을 확실히 막아야 하는 본부장이라면,
+안전장치를 **문서가 아니라 파일 배치로** 만든다.
 
 ```powershell
 New-Item -ItemType Directory -Force -Path _disabled | Out-Null
 Move-Item scripts\reply_outlook_mail.py, scripts\send_teams_reply.py, `
-  scripts\post_teams_channel_message.py, scripts\create_outlook_event.py, `
-  scripts\delete_outlook_event.py -Destination _disabled -ErrorAction SilentlyContinue
+  scripts\post_teams_channel_message.py, scripts\create_outlook_event.py `
+  -Destination _disabled
 ```
 
 에이전트가 부를 수 있는 발송 수단이 물리적으로 사라진다. 초안은 `drafts/` 에
 그대로 쌓이고, 본부장이 직접 복사해 보내신다.
 
-**규칙으로 막는 것과 도구를 없애는 것은 다르다.** 훅이 없는 상태에서 규칙만
-믿는 것은 안전장치가 아니다. 근본 원인(대개 Python 미설치)을 고치는 것이
-우선이며, 이 조치는 그 전까지의 임시 조치다.
+**규칙으로 막는 것과 도구를 없애는 것은 다르다.** 규칙만 믿는 것은 안전장치가
+아니다.
 
 ---
 
 ## 7. 슬래시 명령과 평상어 호출
 
 VS Code + Claude Code 확장은 `/` 로 시작하는 슬래시 명령을 표준으로 지원한다.
-정체불명 래퍼가 `/` 입력을 가로채 다른 UI 로 보내는 위험은 이 하네스에는
-없다. 그럼에도 평상어 호출표(`SYSTEM.md` §6, `ROUTINES.md`)를 그대로 두는
-이유는 다르다: **본부장이 명령어 이름을 외울 필요가 없어야 한다.**
+그럼에도 평상어 호출표(`SYSTEM.md` §6, `ROUTINES.md`)를 두는 이유는
+**본부장이 명령어 이름을 외울 필요가 없어야 한다**는 것이다.
 
 | 평상어 | 루틴 |
 | --- | --- |
@@ -212,8 +201,9 @@ VS Code + Claude Code 확장은 `/` 로 시작하는 슬래시 명령을 표준�
 하네스를 바꾸면 오른쪽 열만 다시 쓴다. 왼쪽은 손대지 않는다.
 그리고 새 하네스에서 다시 `/selftest` 를 통과시킨다.
 
-이 워크스페이스는 **git 을 쓰지 않는다.** 배포는 폴더 통째 복사(§0-2)로 하고,
-버전 관리나 커밋 이력에 기억을 의존하지 않는다. 장기기억은 오직 이 폴더 안의
+본부장 PC 에서는 **git 을 쓰지 않는다.** 배포는 폴더 통째 복사(`SETUP.md` §0-2)로
+하고, 버전 관리나 커밋 이력에 기억을 의존하지 않는다. (스켈레톤 자체의 개발
+이력은 개발 리포에 있다. `DEVELOPMENT.md`) 장기기억은 오직 이 폴더 안의
 마크다운 파일에만 있다는 원칙(`SYSTEM.md` §8)과 같은 이유다: git 이력도
 이 폴더를 다른 PC 로 옮기면 통째로 사라지거나 꼬일 수 있는 하네스 종속물이다.
 

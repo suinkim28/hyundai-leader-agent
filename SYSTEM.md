@@ -57,7 +57,7 @@ cmd 는 `$(date +%F)` 를 폴더 이름으로 그대로 만든다.
 
 ---
 
-## 0-1. 설정은 에이전트가 한다 (2026-09-03)
+## 0-1. 설정은 에이전트가 한다
 
 **본부장님은 터미널을 열지 않는다.** 명령어를 알려드리지 않는다.
 필요한 값만 여쭙고 실행은 전부 에이전트가 한다.
@@ -153,8 +153,8 @@ Select-String -Path meetings\*, decisions\* -Pattern "키워드" -Recurse # 내�
 
 ## 3. 출처 표기 규약
 
-**모든 사실 진술에 출처를 붙인다.** 예외는 없다. `Stop` 훅이 자료를 읽은 턴의
-답변에 출처 표기가 하나도 없으면 지적한다.
+**모든 사실 진술에 출처를 붙인다.** 예외는 없다. 이것을 검사하는 훅은 없다.
+지키는 것은 에이전트다.
 
 | 채널 | 표기 예시 |
 | --- | --- |
@@ -190,7 +190,7 @@ Select-String -Path meetings\*, decisions\* -Pattern "키워드" -Recurse # 내�
 | 메일 | Outlook | 두지 않음 | `scripts/fetch_outlook_mail.py --search "키워드"` |
 | 일정 | Outlook | 두지 않음 | `scripts/fetch_outlook_calendar.py --date YYYY-MM-DD` |
 | Confluence / Jira | Atlassian | 두지 않음 | Atlassian MCP |
-| Teams | Teams | 두지 않음 (검색이 약하면 예외) | `scripts/fetch_teams_message.py <url>` |
+| Teams | Teams | 두지 않음 | `scripts/fetch_teams_message.py <url>` |
 | 문서 | SharePoint / OneDrive | 두지 않음 | `CONNECTIONS.md` 참조 |
 
 **남기는 것은 원본이 아니라 판단이다.** 메일 본문을 복사하는 대신 그 메일로
@@ -295,7 +295,7 @@ Select-String -Path meetings\*, decisions\* -Pattern "키워드" -Recurse # 내�
   - Model: `<모델명 또는 "수기">`
   - Language: `ko`
   ```
-- 고유명사(사람 이름, 조직명, 사내 약어)는 `knowledge_base/용어집.txt` 에
+- 고유명사(사람 이름, 조직명, 사내 약어)는 `knowledge_base/transcription_glossary.txt` 에
   쌓고 전사 프롬프트에 넣는다. 이름이 틀린 회의록은 쓰이지 않는다.
 
 **녹음 금지 회의가 있다.** 상위자가 주재하는 회의는 녹음, 녹화를 금지하는
