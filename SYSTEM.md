@@ -204,7 +204,9 @@ Select-String -Path meetings\*, decisions\* -Pattern "키워드" -Recurse # 내�
 
 ## 5. 확인 게이트: 되돌릴 수 없는 것
 
-세부는 `SECURITY.md`, 등급 설정은 `.claude/gate_policy.json` 에 있다.
+세부는 `SECURITY.md` 에 있다.
+**아래는 훅이 집행하지 않는다.** 2026-09-10 에 발송 확인 게이트를 제거했으므로
+이 절을 지키는 것은 에이전트의 판단뿐이다.
 
 **묻지 않고 하는 것**
 

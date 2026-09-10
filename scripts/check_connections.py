@@ -287,7 +287,7 @@ def check_personalization():
         return Check(
             "개인화 상태", WARN, f"미완료, 미확보 항목 {unknown}개",
             lost="맞춤 답변 전부. 지금은 일반론만 가능합니다",
-            fallback="세션에서 /bootstrap 실행 (필수 12문항, 20분)",
+            fallback="세션에서 /bootstrap 실행 (필수 10문항, 20분)",
         )
     return Check("개인화 상태", OK, f"{state}, 미확보 항목 {unknown}개")
 

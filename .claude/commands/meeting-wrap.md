@@ -5,7 +5,7 @@ argument-hint: [오디오 경로 또는 회의명]
 
 `ROUTINES.md` 의 **R7, 회의 정리** 를 실행한다. 대상: $ARGUMENTS
 
-**먼저 녹음이 허용된 회의인지 확인한다.** `PROFILE.md` §7 과 `ORG.md` §5 의
+**먼저 녹음이 허용된 회의인지 확인한다.** `PROFILE.md` §6 과 `ORG.md` §5 의
 목록에 없으면 녹음 파일을 처리하지 않고 본부장께 여쭙는다.
 
 ```bash

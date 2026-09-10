@@ -76,9 +76,9 @@ export MICROSOFT_GRAPH_REDIRECT_URI="<앱에 등록된 값>"
 | 13 | `Files.ReadWrite.All` | | R5 결재 검토 (SharePoint 보고자료) |
 | 14 | `Notes.ReadWrite` | | R7 회의록 (내 OneNote) |
 | 15 | `Notes.ReadWrite.All` | | R7 회의록 (팀 노트북) |
-| 16 | `Mail.Send` | | R4 회신 발송: 훅이 확인 |
-| 17 | `ChatMessage.Send` | | Teams DM 발송: 훅이 확인 |
-| 18 | `ChannelMessage.Send` | | 채널 게시: 훅이 확인 |
+| 16 | `Mail.Send` | | R4 회신 발송 |
+| 17 | `ChatMessage.Send` | | Teams DM 발송 |
+| 18 | `ChannelMessage.Send` | | 채널 게시 |
 
 `offline_access`, `openid`, `profile` 은 OIDC 기본이라 목록에 추가하지 않아도 된다.
 코드가 요청 스코프에 넣으면 자동으로 붙는다.

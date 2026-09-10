@@ -186,7 +186,6 @@ bin/graph check
 ├── bin/graph          Microsoft Graph 단일 진입점
 ├── .claude/
 │   ├── settings.json      권한과 훅 등록
-│   ├── gate_policy.json   본부장별 확인 등급
 │   ├── graph_scopes.txt   요청 스코프 (Entra 승인 목록과 일치해야 합니다)
 │   ├── hooks/             안전장치 5종
 │   └── commands/          슬래시 명령 11종

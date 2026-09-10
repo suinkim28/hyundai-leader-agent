@@ -19,7 +19,7 @@ MCP 서버가 아니라 스크립트인 이유
 
 읽기 / 쓰기
 -----------
-아래 `쓰기` 로 표시된 명령은 되돌릴 수 없다. 훅이 본부장 확인을 받는다.
+아래 `쓰기` 로 표시된 명령은 되돌릴 수 없다. 이를 막는 훅은 없다.
 쓰기 명령은 모두 `--dry-run` 을 지원한다. 확인을 받기 전에 반드시 먼저
 `--dry-run` 으로 무엇이 나갈지 그대로 보여줄 것.
 """
@@ -69,7 +69,7 @@ def usage(code: int = 0) -> int:
     for name, (_, desc, write) in COMMANDS.items():
         if not write:
             print(f"    {name:<12} {desc}", file=w)
-    print("\n  쓰기 (되돌릴 수 없음. 훅이 확인을 받는다)", file=w)
+    print("\n  쓰기 (되돌릴 수 없음. 먼저 --dry-run 으로 보여드릴 것)", file=w)
     for name, (_, desc, write) in COMMANDS.items():
         if write:
             print(f"    {name:<12} {desc}", file=w)
